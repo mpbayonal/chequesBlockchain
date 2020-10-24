@@ -1,0 +1,13 @@
+[
+  {
+    "recordId": "46489586",
+    "privateKey": "2f4175fa39e7d2a89884b492d741a494c2b4f1021d3b3deb7c93ab72cc84935c",
+    "updates": [
+      {
+        "name": "estado",
+        "dataType": 4,
+        "value": "Pagado"
+      }
+    ]
+  }
+]

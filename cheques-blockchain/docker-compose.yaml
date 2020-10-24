@@ -1,0 +1,186 @@
+# Copyright 2017 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ------------------------------------------------------------------------------
+
+version: '2.1'
+
+services:
+
+  shell:
+    image: supply-shell
+    container_name: cheques-shell
+    build:
+      context: .
+      dockerfile: shell/Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    volumes:
+      - .:/sawtooth-supply-chain
+      - /sawtooth-supply-chain/server/node_modules
+    depends_on:
+      - rethink
+      - rest-api
+    environment:
+      - VALIDATOR_URL=tcp://validator:4004
+      - DB_HOST=rethink
+      - SERVER=http://server:3000
+      - 'http_proxy=${http_proxy}'
+      - 'https_proxy=${https_proxy}'
+      - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
+    command: |
+      bash -c "
+        cd asset_client/ && npm run build && cd - &&
+        cd fish_client/ && npm run build && cd cd - &&
+        if [ ! -f /root/.sawtooth/keys/root.priv ]; then
+          sawtooth keygen &&
+          cd server/ &&
+          npm run init &&
+          cd -
+        fi;
+        tail -f /dev/null
+      "
+
+  processor:
+    image: supply-tp
+    container_name: cheques-tp
+    build:
+      context: processor/
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    environment:
+      - 'http_proxy=${http_proxy}'
+      - 'https_proxy=${https_proxy}'
+      - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
+    volumes:
+      - .:/sawtooth-supply-chain
+      - /sawtooth-supply-chain/processor/target
+      - /sawtooth-supply-chain/processor/src/messages
+    entrypoint: |
+      bash -c "
+        cargo build &&
+        supply-chain-tp -v -C tcp://validator:4004
+      "
+
+  server:
+    image: supply-server
+    container_name: cheques-server
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    volumes:
+      - .:/sawtooth-supply-chain
+      - /sawtooth-supply-chain/server/node_modules
+    expose:
+      - 3000
+    ports:
+      - '8020:3000'
+    depends_on:
+      - validator
+      - rethink
+      - shell
+    environment:
+      - VALIDATOR_URL=tcp://validator:4004
+      - DB_HOST=rethink
+      - 'http_proxy=${http_proxy}'
+      - 'https_proxy=${https_proxy}'
+      - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
+    entrypoint: node index.js
+
+  ledger-sync:
+    image: supply-ledger-sync
+    container_name: cheques-ledger-sync
+    build:
+      context: .
+      dockerfile: ledger_sync/Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    volumes:
+      - .:/sawtooth-supply-chain
+      - /sawtooth-supply-chain/ledger_sync/node_modules
+    depends_on:
+      - validator
+      - rethink
+    environment:
+      - VALIDATOR_URL=tcp://validator:4004
+      - DB_HOST=rethink
+      - 'http_proxy=${http_proxy}'
+      - 'https_proxy=${https_proxy}'
+      - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
+
+  rethink:
+    image: rethinkdb
+    container_name: cheques-rethink
+    expose:
+      - 8080
+      - 28015
+    ports:
+      - '8023:8080'
+      - '28020:28015'
+    environment:
+      - 'http_proxy=${http_proxy}'
+      - 'https_proxy=${https_proxy}'
+      - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
+
+  validator:
+    image: hyperledger/sawtooth-validator:1.0
+    container_name: cheques-validator
+    expose:
+      - 4004
+    ports:
+      - '4020:4004'
+    # start the validator with an empty genesis batch
+    entrypoint: |
+      bash -c "
+        if [ ! -f /etc/sawtooth/keys/validator.priv ]; then
+          sawadm keygen &&
+          sawtooth keygen my_key &&
+          sawset genesis -k /root/.sawtooth/keys/my_key.priv &&
+          sawadm genesis config-genesis.batch
+        fi;
+        sawtooth-validator -vv \
+          --endpoint tcp://validator:8800 \
+          --bind component:tcp://eth0:4004 \
+          --bind network:tcp://eth0:8800
+      "
+
+  settings-tp:
+    image: hyperledger/sawtooth-settings-tp:1.0
+    container_name: cheques-settings-tp
+    depends_on:
+      - validator
+    entrypoint: settings-tp -vv -C tcp://validator:4004
+
+  rest-api:
+    image: hyperledger/sawtooth-rest-api:1.0
+    container_name: cheques-rest-api
+    expose:
+      - 8008
+    ports:
+      - '8024:8008'
+    depends_on:
+      - validator
+    entrypoint: |
+      sawtooth-rest-api -vv
+        --connect tcp://validator:4004
+        --bind rest-api:8008
