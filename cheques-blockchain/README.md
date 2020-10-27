@@ -1,6 +1,4 @@
-
-
-# Sawtooth Supply Chain
+# Cheques
 
 This is a distributed application to help you trace the provenance and other
 contextual information of any asset. It can be used as-is or customized for
@@ -56,7 +54,7 @@ This will take awhile the first time it runs, but when complete will be running
 all required components in separate containers. Many of the components will be
 available through HTTP endpoints, including:
 
-- The Supply Chain REST API will be at **http://localhost:8020**
+- The Cheques REST API will be at **http://localhost:8020**
 - RethinkDB's admin panel will be available at **http://localhost:8023**
 - Sawtooth's blockchain REST API will be available at **http://localhost:8024**
 
@@ -68,19 +66,7 @@ command:
 docker-compose down
 ```
 
-### Running Scripts in the Shell
-
-Running `docker-compose up`, will automatically run all scripts necessary to
-use all Supply Chain components. However if you want to run any additional
-scripts, such as scripts to automatically update sample blockchain data, a shell
-container is provided with all necessary dependencies installed. To enter the
-shell, simply open a terminal window and run:
-
-```bash
-docker exec -it supply-shell bash
-```
-
-Once inside the shell, you might try running the one of the update scripts to
+Once Docker is running navigate to the root project directory and run the one of the update scripts to
 see live updates populate in the cheque App. First navigate to the server
 directory:
 
@@ -88,21 +74,6 @@ directory:
 cd server/
 npm run make-cheque
 npm run seed-example-users
-```
-
-
-You can customize how many updates are submitted per minute with the `RATE`
-environment variable (default 6), and use `LIMIT` to stop the updates after a
-certain number are submitted (default 25):
-
-```bash
-RATE=3 LIMIT=10 npm run update-sample-assets
-```
-
-If you just want to exit the shell, you can simply run:
-
-```bash
-exit
 ```
 
 ### Configuring API Keys and Secrets
@@ -115,10 +86,7 @@ properties:
 - **JWT_SECRET**: can be any random string
 - **PRIVATE_KEY**: must be 64 random hexadecimal characters
 
-These properties can be set one of two ways, through an environment variable,
-or (preferably) by creating a file named `config.json` file in the `server/`
-directory. A file named `config.json.example` is provided which should provide
-a template to follow.
+These properties can be set using an environment variable,
 
 ## Development
 
@@ -133,17 +101,18 @@ restart a single component from separate terminal using the container name. For
 example:
 
 ```bash
-docker restart supply-server
+docker restart cheques-server
 ```
 
 The available container names include:
-- supply-shell
-- supply-processor
-- supply-server
-- supply-rethink
-- supply-validator
-- supply-settings-tp
-- supply-rest-api
+
+- cheques-shell
+- cheques-processor
+- cheques-server
+- cheques-rethink
+- cheques-validator
+- cheques-settings-tp
+- cheques-rest-api
 
 #### Building Protobuf Files
 
