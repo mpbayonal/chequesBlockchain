@@ -15,6 +15,7 @@
  * ----------------------------------------------------------------------------
  */
 'use strict'
+require('dotenv').config()
 
 const loadConfig = (defaultValue = {}) => {
   try {
@@ -34,10 +35,11 @@ const initConfigValue = (key, defaultValue = null) => {
 
 // Setup non-sensitive config variable with sensible defaults,
 // if not set in environment variables or config.json
-initConfigValue('RETRY_WAIT', 5000)
-initConfigValue('VALIDATOR_URL', 'tcp://localhost:4004')
-initConfigValue('DB_HOST', 'localhost')
-initConfigValue('DB_PORT', 28015)
-initConfigValue('DB_NAME', 'cheques')
+initConfigValue('RETRY_WAIT', process.env.RETRY_WAIT)
+initConfigValue('VALIDATOR_URL', process.env.VALIDATOR_URL)
+initConfigValue('DB_HOST', process.env.DB_HOST)
+initConfigValue('DB_PORT', process.env.DB_PORT)
+initConfigValue('DB_NAME', process.env.DB_NAME)
+
 
 module.exports = config

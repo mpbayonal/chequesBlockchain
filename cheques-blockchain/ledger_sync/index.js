@@ -19,6 +19,7 @@
 const db = require('./db')
 const subscriber = require('./subscriber')
 const protos = require('./subscriber/protos')
+require('dotenv').config()
 
 Promise.all([
   db.connect(),

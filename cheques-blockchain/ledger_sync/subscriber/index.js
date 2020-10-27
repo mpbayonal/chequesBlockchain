@@ -29,6 +29,7 @@ const {
 } = require('sawtooth-sdk/protobuf')
 
 const deltas = require('./deltas')
+
 const config = require('../system/config')
 
 const PREFIX = '3400de'

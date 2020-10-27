@@ -18,6 +18,7 @@
 
 const fs = require('fs')
 const path = require('path')
+require('dotenv').config()
 
 const loadConfig = (defaultValue = {}) => {
   try {
@@ -37,21 +38,21 @@ const initConfigValue = (key, defaultValue = null) => {
 
 // Setup non-sensitive config variable with sensible defaults,
 // if not set in environment variables or config.json
-initConfigValue('PORT', 3000)
-initConfigValue('RETRY_WAIT', 5000)
-initConfigValue('DEFAULT_SUBMIT_WAIT', 5000000)
-initConfigValue('VALIDATOR_URL', 'tcp://localhost:4004')
-initConfigValue('DB_HOST', 'localhost')
-initConfigValue('DB_PORT', 28015)
-initConfigValue('DB_NAME', 'cheques')
+initConfigValue('RETRY_WAIT', process.env.RETRY_WAIT)
+initConfigValue('VALIDATOR_URL', process.env.VALIDATOR_URL)
+initConfigValue('DB_HOST', process.env.DB_HOST)
+initConfigValue('DB_PORT', process.env.DB_PORT)
+initConfigValue('DB_NAME', process.env.DB_NAME)
+initConfigValue('PORT', process.env.PORT)
+initConfigValue('DEFAULT_SUBMIT_WAIT',  process.env.DEFAULT_SUBMIT_WAIT)
 initConfigValue('SIGNING_ALGORITHM', 'secp256k1')
 
 // Setup config variables with no defaults
 initConfigValue('MAPS_API_KEY')
 
 // Setup sensitive variable, warning user if using defaults
-initConfigValue('JWT_SECRET')
-initConfigValue('PRIVATE_KEY')
+initConfigValue('JWT_SECRET',  process.env.JWT_SECRET)
+initConfigValue('PRIVATE_KEY',  process.env.PRIVATE_KEY)
 
 if (!config.PRIVATE_KEY) {
   config.PRIVATE_KEY = Array(64).fill('1').join('')
@@ -62,7 +63,7 @@ if (!config.PRIVATE_KEY) {
 }
 
 if (!config.JWT_SECRET) {
-  config.JWT_SECRET = 'cheques-secret'
+  config.JWT_SECRET = 'supply-chain-secret'
   console.warn(
     'WARNING! No secret provided. JWT authorization tokens will be insecure!')
   console.warn(

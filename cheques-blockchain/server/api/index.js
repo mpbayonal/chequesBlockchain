@@ -166,16 +166,6 @@ router.get('/info', handle(() => {
     }))
 }))
 
-router.post('/info/mapsApiKey', handleBody(body => {
-  return Promise.resolve()
-    .then(() => {
-      if (config.MAPS_API_KEY) {
-        throw new BadRequest('Google Maps API key already set')
-      }
-      config.set('MAPS_API_KEY', body.mapsApiKey)
-      return `Google Maps API key set to "${body.mapsApiKey}"`
-    })
-}))
 
 router.get('/records', handle(records.listRecords))
 router.get('/records/:recordId', handle(records.fetchRecord))

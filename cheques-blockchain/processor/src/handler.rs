@@ -585,7 +585,7 @@ pub struct SupplyChainTransactionHandler {
 impl SupplyChainTransactionHandler {
     pub fn new() -> SupplyChainTransactionHandler {
         SupplyChainTransactionHandler {
-            family_name: "cheques".to_string(),
+            family_name: "supply_chain".to_string(),
             family_versions: vec!["1.1".to_string()],
             namespaces: vec![get_supply_chain_prefix().to_string()],
         }

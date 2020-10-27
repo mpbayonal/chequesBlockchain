@@ -19,6 +19,7 @@
 const express = require('express')
 const db = require('./db')
 const blockchain = require('./blockchain')
+require('dotenv').config()
 const protos = require('./blockchain/protos')
 const api = require('./api')
 const config = require('./system/config')

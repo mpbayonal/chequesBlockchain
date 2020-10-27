@@ -27,7 +27,7 @@ const {
 } = require('sawtooth-sdk/protobuf')
 const protos = require('../blockchain/protos')
 
-const FAMILY_NAME = 'cheques'
+const FAMILY_NAME = 'supply_chain'
 const FAMILY_VERSION = '1.1'
 const NAMESPACE = '3400de'
 

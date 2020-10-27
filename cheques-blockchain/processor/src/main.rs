@@ -39,7 +39,7 @@ use handler::SupplyChainTransactionHandler;
 fn main() {
     let matches = clap_app!(intkey =>
         (version: crate_version!())
-        (about: "Cheques Transaction Processor")
+        (about: "SupplyChain Transaction Processor (Rust)")
         (@arg connect: -C --connect +takes_value
          "connection endpoint for validator")
         (@arg verbose: -v --verbose +multiple

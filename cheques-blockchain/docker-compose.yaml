@@ -42,8 +42,6 @@ services:
       - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
     command: |
       bash -c "
-        cd asset_client/ && npm run build && cd - &&
-        cd fish_client/ && npm run build && cd cd - &&
         if [ ! -f /root/.sawtooth/keys/root.priv ]; then
           sawtooth keygen &&
           cd server/ &&

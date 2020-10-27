@@ -1,5 +1,5 @@
 {
-  "name": "supply_chain_ledger_sync",
+  "name": "cheques_ledger_sync",
   "version": "0.0.0",
   "description": "A simple component to sync blockchain state to a database",
   "main": "index.js",
@@ -23,6 +23,7 @@
   "homepage": "https://github.com/hyperledger/sawtooth-supply-chain#readme",
   "dependencies": {
     "body-parser": "^1.17.2",
+    "dotenv": "^8.2.0",
     "js-schema": "^1.0.1",
     "lodash": "^4.17.4",
     "protobufjs": "^6.8.0",
