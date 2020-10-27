@@ -17,39 +17,7 @@ version: '2.1'
 
 services:
 
-  shell:
-    image: supply-shell
-    container_name: cheques-shell
-    build:
-      context: .
-      dockerfile: shell/Dockerfile
-      args:
-        - http_proxy
-        - https_proxy
-        - no_proxy
-    volumes:
-      - .:/sawtooth-supply-chain
-      - /sawtooth-supply-chain/server/node_modules
-    depends_on:
-      - rethink
-      - rest-api
-    environment:
-      - VALIDATOR_URL=tcp://validator:4004
-      - DB_HOST=rethink
-      - SERVER=http://server:3000
-      - 'http_proxy=${http_proxy}'
-      - 'https_proxy=${https_proxy}'
-      - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
-    command: |
-      bash -c "
-        if [ ! -f /root/.sawtooth/keys/root.priv ]; then
-          sawtooth keygen &&
-          cd server/ &&
-          npm run init &&
-          cd -
-        fi;
-        tail -f /dev/null
-      "
+
 
   processor:
     image: supply-tp
