@@ -29,6 +29,7 @@
     "body-parser": "^1.17.2",
     "dotenv": "^8.2.0",
     "express": "^4.15.4",
+    "cors": "*",
     "js-schema": "^1.0.1",
     "jsonwebtoken": "^7.4.3",
     "lodash": "^4.17.4",

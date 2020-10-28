@@ -1,0 +1,207 @@
+<div class="row" *ngIf="!creado">
+
+
+  <div class="col-lg-12 col-md-12 col-sm-12">
+    <div class="card card-stats">
+      <div class="card-body ">
+        <div class="row">
+
+          <div class="col-7 col-md-7">
+            <div >
+              <h6 >Valor</h6>
+              <p >30000
+
+              <p>
+            </div>
+            <div >
+              <h6 >Estado</h6>
+              <p>Pagado
+
+              <p>
+            </div>
+            <div >
+              <h6 >Primer Propietario</h6>
+              <p >Monica Paola Bayona
+
+              <p>
+            </div>
+            <div >
+              <h6 >Tipo</h6>
+              <p >General
+
+              <p>
+            </div>
+            <div >
+              <h6>Los fondos existen</h6>
+              <p >Si
+
+              <p>
+            </div>
+          </div>
+          <div class="col-1 col-md-1">
+
+
+
+
+
+          </div>
+          <div class="col-4 col-md-4">
+
+            <button type="submit" class="btn btn-danger btn-round"  (click)="crear = true;" *ngIf="!crear">Endosar cheque</button>
+            <button type="submit" class="btn btn-danger btn-round"  (click)="crear = false;" *ngIf="crear">Ver cheques</button>
+
+
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+</div>
+
+<div class="row"  *ngIf="!crear && !creado">
+
+
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">Cadena de Endosos</h4>
+      </div>
+      <div class="card-body">
+        <app-detalle-cheque-tabla></app-detalle-cheque-tabla>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="row"  *ngIf="!crear && !creado">
+
+
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">Historial de estados</h4>
+      </div>
+      <div class="card-body">
+        <state-tabla></state-tabla>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<div class="row"  *ngIf="crear && !creado">
+
+  <div class="col-md-12">
+    <div class="card card-user">
+
+
+      <div class="card-body">
+        <div class="row">
+
+
+          <div class="col-md-6">
+            <h3 class="card-title">Bancolombia</h3>
+          </div>
+          <div class="col-md-6">
+            <h6 class="card-title float-right">Cheque No. 56878786  {{ idCheque }}</h6>
+          </div>
+        </div>
+        <form [formGroup]="frmCheque" (ngSubmit)="onCrearCheque()">
+          <div class="row">
+            <div class="col-md-12 pr-1">
+
+              <div class="form-group">
+                <div class="row">
+
+                  <div class="col-md-6">
+                    <label>Endosar a:</label>
+                  </div>
+
+                </div>
+                <input
+                  class="form-control"
+                  formControlName="portador"
+                  [ngClass]="{ 'is-invalid': submited && f.portador.errors }"
+                  type="text"
+                  placeholder="Escribe aquí el nombre del beneficiario"
+                />
+                <div *ngIf="submited && f.portador.errors" class="invalid-feedback">
+                  <div *ngIf="f.portador.errors.required">Nombre del beneficiario es requerido</div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="col-md-12 pr-1">
+
+              <div class="form-group">
+                <div class="row">
+
+
+                  <div class="col-md-7">
+                    <label>Cedula</label>
+
+                    <input
+                      class="form-control"
+                      formControlName="valor"
+                      [ngClass]="{ 'is-invalid': submited && f.valor.errors }"
+                      type="number"
+                      placeholder="Escribe aquí la cedula"
+                    />
+                    <div *ngIf="submited && f.valor.errors" class="invalid-feedback">
+                      <div *ngIf="f.valor.errors.required">valor requerido</div>
+
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+
+
+
+          <div class="row">
+            <div class="update ml-auto mr-auto">
+              <button type="submit" class="btn btn-danger btn-round">Endosar cheque</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="row"  *ngIf="creado">
+
+
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"> Transacción exitosa</h3>
+      </div>
+      <div class="card-body">
+        <h5> El cheque <b>No. 56878786</b> fue endosado en favor de <b>Laura Martinez Castro </b> como beneficiaria, el dia <b>14 de octubre de 2020</b>, con Monica Paola Bayona Latorre como libradora, y con un valor de <b>dos millones de pesos</b> en Bogota D.C, y con fecha de vencimiento del <b>2 de abril de 2021</b>.</h5>
+        <h6 class="text-center">El token de la transacción fue <b>00009877bndn8997nbgbg9876</b></h6>
+      </div>
+      <div class="row">
+        <div class="update ml-auto mr-auto">
+          <button  class="btn btn-danger btn-round" (click)="regresar()" >Regresar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

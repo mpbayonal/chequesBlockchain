@@ -17,6 +17,18 @@ version: '2.1'
 
 services:
 
+  cheques-client:
+    container_name: cheques-client
+    build:
+      context: .
+      dockerfile: cliente/Dockerfile
+    expose:
+      - 3000
+    ports:
+      - 3000:3000
+    volumes:
+      - /sawtooth-supply-chain/cliente
+
   shell:
     image: supply-shell
     container_name: cheques-shell

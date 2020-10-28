@@ -23,10 +23,14 @@ require('dotenv').config()
 const protos = require('./blockchain/protos')
 const api = require('./api')
 const config = require('./system/config')
+const bodyParser = require("body-parser");
+const cors = require("cors");
 
 const PORT = config.PORT
 const app = express()
-
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
 Promise.all([
   db.connect(),
   protos.compile(),
