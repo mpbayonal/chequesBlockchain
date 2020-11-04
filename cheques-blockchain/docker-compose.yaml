@@ -64,27 +64,16 @@ services:
       "
 
   processor:
-    image: supply-tp
-    container_name: cheques-tp
-    build:
-      context: processor/
-      args:
-        - http_proxy
-        - https_proxy
-        - no_proxy
-    environment:
-      - 'http_proxy=${http_proxy}'
-      - 'https_proxy=${https_proxy}'
-      - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
+    image: processor
+    container_name: processor
+    build: ./processor
     volumes:
-      - .:/sawtooth-supply-chain
-      - /sawtooth-supply-chain/processor/target
-      - /sawtooth-supply-chain/processor/src/messages
-    entrypoint: |
-      bash -c "
-        cargo build &&
-        supply-chain-tp -v -C tcp://validator:4004
-      "
+      - ./processor:/processor
+      - /processor/node_modules
+    depends_on:
+      - validator
+    environment:
+      - VALIDATOR_URL=tcp://validator:4004
 
   server:
     image: supply-server
