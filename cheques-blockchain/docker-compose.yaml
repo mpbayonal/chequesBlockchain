@@ -65,7 +65,7 @@ services:
 
   processor:
     image: processor
-    container_name: processor
+    container_name: cheques-processor
     build: ./processor
     volumes:
       - ./processor:/processor
