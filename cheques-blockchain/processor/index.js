@@ -1,5 +1,5 @@
 'use strict'
-
+require('dotenv').config()
 const {TransactionProcessor} = require('sawtooth-sdk/processor')
 const ChequesHandler = require('./handler')
 

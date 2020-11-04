@@ -518,4 +518,4 @@ async function getRecord(context, record_id) {
     await context.setState(updates)
 }
 
-module.exports = SawChainHandler
+module.exports = ChequesHandler
