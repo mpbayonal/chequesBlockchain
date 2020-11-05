@@ -545,6 +545,53 @@ async function createProposal(context, signerPublicKey, timestamp, {record_id, r
 
 async function answerProposal(context, signerPublicKey, timestamp, {record_id, receiving_agent, role, response}) {
 
+    let proposal_address = make_proposal_address(
+        record_id, receiving_agent)
+    let proposal_container = getContainer(context,proposal_address,"PROPOSAL")
+
+
+    let proposal =  null
+
+    try {
+        for(var proposal1 of proposal_container.entries){
+
+            if(proposal1.status === Proposal.OPEN
+                && proposal1.receiving_agent === receiving_agent
+            && proposal1.role === role ){
+
+                proposal = proposal1
+            }
+
+        }
+    }catch (e) {
+        reject('No existe el proposal')
+    }
+
+    if(response === AnswerProposalAction.CANCEL ){
+        if (proposal.issuing_agent !== signerPublicKey){
+            reject('Only the issuing agent can cancel')
+        }
+
+        proposal.status = Proposal.CANCELED
+    }
+    else if(response === AnswerProposalAction.REJECT){
+        if (proposal.receiving_agent !== signerPublicKey){
+            reject('Only the receiving agent can reject')
+        }
+        proposal.status = Proposal.REJECTED
+    }
+    else if(response === AnswerProposalAction.ACCEPT){
+        if (proposal.receiving_agent !== signerPublicKey){
+            reject('Only the receiving agent can accept')
+        }
+        proposal.status = await  accept_proposal(context,signerPublicKey,timestamp, proposal)
+
+    }
+
+    await setContainer(context,proposal_address, proposal_container,"PROPOSAL")
+
+
+
 
 }
 
