@@ -16,7 +16,7 @@ const hashAndSlice = (input, len) => {
 // SawChain Family metadata.
 const FAMILY_NAME = 'supply_chain'
 const NAMESPACE = hashAndSlice(FAMILY_NAME, 6)
-const VERSION = '0.1'
+const VERSION = '1.1'
 
 // Addressing state object prefixes.
 const PREFIXES = {
