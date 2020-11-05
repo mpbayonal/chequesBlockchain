@@ -159,25 +159,33 @@ class ChequesHandler extends TransactionHandler {
 
 
 async function createAgent(context, signerPublicKey, timestamp, {name}) {
-    const agentAddress = make_agent_address(signerPublicKey)
 
-    const state = await context.getState([agentAddress])
-
-    // Validation: System Admin is already recorded.
-    if (state[agentAddress].length > 0) {
-        reject('Ya existe el usuario')
+    if (!name) {
+        reject('El nombre del usuario no debe estar vacio')
     }
 
-    // State update.
-    const updates = {}
+    const agentAddress = make_agent_address(signerPublicKey)
+    let container = await getContainer(context, agentAddress, "AGENT")
 
-    updates[agentAddress] = Agent.encode({
+    let agent;
+    for (agent of container.entries) {
+
+        if (agent.public_key === signerPublicKey) {
+            reject('Ya existe el usuario')
+
+        }
+    }
+
+
+    let agent2 = Agent.create({
         publicKey: signerPublicKey,
         timestamp: timestamp,
         name: name,
-    }).finish()
+    })
+    container.entries.push([agent2])
 
-    await context.setState(updates)
+    await setContainer(context, agentAddress, container, "AGENT")
+
 }
 
 async function createRecord(
@@ -199,12 +207,15 @@ async function createRecord(
     }
 
     // Validation: Admin field doesn't contain a valid public key.
-    if (!isValidPublicKey(admin)) {
-        reject('La llave publica no es valida')
-    }
+    verifyAgent(context, signerPublicKey)
+
+
+    let recordAddress = make_record_address(record_id)
+    let constainer = await getContainer(context, recordAddress, "RECORD")
+
 
     const agentAddress = make_agent_address(signerPublicKey)
-    const idRecord = make_record_address(record_id)
+
     const recordType = make_record_type_address(record_type)
 
     const state = await context.getState([agentAddress, idRecord, recordType])
@@ -221,8 +232,6 @@ async function createRecord(
     }
 
 
-    const agent = Agent.decode(state[agentAddress])
-    const record = Record.decode(state[idRecord])
     const recordtype = RecordType.decode(state[recordType])
 
     var type_schemata = {};
@@ -243,15 +252,16 @@ async function createRecord(
 
     var provided_properties = {};
 
-    for (var prop in properties) {
+    for (var prop2 in properties) {
 
-        provided_properties[prop.name] = prop
+        provided_properties[prop2.name] = prop2
 
     }
 
-    for (var prop in required_properties) {
 
-        if (prop in provided_properties) {
+    for (var prop3 in required_properties) {
+
+        if (prop3 in provided_properties) {
 
 
         } else {
@@ -260,13 +270,14 @@ async function createRecord(
 
     }
 
+
     for (var provided_name in provided_properties) {
         let required_type = type_schemata[provided_name].data_type
         let provided_type = provided_properties[provided_name].data_type
 
         if (required_type !== provided_type) {
 
-            reject("Value provided is the wrong type")
+            reject("El valor de la propiedad esta en un formato icorrecto")
         }
 
     }
@@ -276,6 +287,8 @@ async function createRecord(
         record_id: record_id,
         record_type: record_type,
         final: false,
+        owners: [],
+        custodians: []
 
     })
 
@@ -290,30 +303,33 @@ async function createRecord(
         timestamp: timestamp,
     }))
 
-    for (var name in type_schemata) {
+    constainer.entries.push([RecordNuevo])
+
+    await setContainer(context, recordAddress, container, "RECORD")
 
 
-        let newProperty = Property.create({
-            signer: signerPublicKey,
-            record_id: record_id,
-            data_type: type_schemata[name].data_type,
-            current_page: 1,
-            wrapped: false,
-            fixed: type_schemata[name].fixed,
-            number_exponent: type_schemata[name].number_exponent,
-            unit: type_schemata[name].unit,
-            enum_options: type_schemata[name].enum_options,
-            struct_properties: type_schemata[name].struct_properties,
-        })
+    for (var name2 in type_schemata) {
 
-        newProperty.reporters.push(Property.Reporter.create({
-                public_key: signerPublicKey,
-                authorized: true,
-                index: 0
-            }
-        ))
+        await set_new_property(
+            context,
+            record_id,
+            name2,
+            type_schemata[name2].struct_properties,
+            type_schemata[name2].enum_options,
+            type_schemata[name2].fixed,
+            type_schemata[name].number_exponent,
+            type_schemata[name2].unit,
+            type_schemata[name2].data_type,
+            signerPublicKey)
 
-        await context.setState(updates)
+        if (name2 in provided_properties) {
+            set_new_propertyPage(context, timestamp, record_id, name2, null, 1)
+
+        } else {
+
+            set_new_propertyPage(context, timestamp, record_id, name2, provided_properties[name2], 1)
+
+        }
 
 
     }
@@ -323,151 +339,398 @@ async function createRecord(
 
 
 async function createRecordType(context, signerPublicKey, timestamp, {name, properties}) {
-    const agentAddress = make_agent_address(signerPublicKey)
+    if(!name){
 
-    const state = await context.getState([agentAddress])
+        reject('No se ingreso el campo del nombre del cheque')
 
-    // Validation: System Admin is already recorded.
-    if (state[agentAddress].length > 0) {
-        reject('Ya existe el usuario')
+    }
+    if(!properties){
+
+        reject('No se ingreso ninguna propiedad')
     }
 
-    // State update.
-    const updates = {}
+    for(prop of properties){
 
-    updates[agentAddress] = Agent.encode({
-        publicKey: signerPublicKey,
-        timestamp: timestamp,
-        name: name,
-    }).finish()
+        if(!prop.name){
 
-    await context.setState(updates)
+            reject('No se ingreso en nombre de la propiedad')
+        }
+
+    }
+
+
+
+    const address = make_record_type_address(name)
+
+    let container = getContainer(context, address, "RECORD_TYPE")
+
+    for (rec_type of container.entries) {
+
+        if (rec_type.name === name) {
+            reject('Ya existe este tipo de cheque')
+
+        }
+    }
+
+    let record_type = RecordType.create({
+        name:name,
+        properties:properties
+
+    })
+
+    container.entries.push([record_type])
+    await setContainer(context,address,container,"RECORD_TYPE" )
+
+
+
+
 }
 
 async function updateProperties(context, signerPublicKey, timestamp, {record_id, properties}) {
-    const agentAddress = make_agent_address(signerPublicKey)
 
-    const state = await context.getState([agentAddress])
+    let recordtemp = await getRecord(context,record_id)
 
-    // Validation: System Admin is already recorded.
-    if (state[agentAddress].length > 0) {
-        reject('Ya existe el usuario')
+    if (recordtemp.record.final === true) {
+
+        reject('El cheque ya esta en estado protestado o materializado ')
     }
 
-    // State update.
-    const updates = {}
+    let updateProp;
+    for(updateProp of properties){
+        let nameProp = updateProp.name
+        let data_typeProp = updateProp.data_type
+        let property_address = make_property_address(record_id, nameProp)
+        let prop = await getContainer(context, property_address, "PROPERTY")
 
-    updates[agentAddress] = Agent.encode({
-        publicKey: signerPublicKey,
-        timestamp: timestamp,
-        name: name,
-    }).finish()
+        let propAct = null
+        let prop2;
+        for (prop2 of prop.entries) {
 
-    await context.setState(updates)
+            if (prop2.name !== nameProp) {
+                reject('la propiedad no existe')
+            }
+            propAct = prop2
+
+        }
+
+        let reporteact = null;
+        let reporter;
+        for (reporter of prop.reporters) {
+
+            if (reporter.public_key === signerPublicKey && reporter.authorized) {
+                reporteact = reporter
+            }
+            else {
+                reject('El usuario no esta autorizado')
+            }
+
+        }
+
+        if(data_typeProp !== propAct.data_type ){
+            reject('El tipo de datos de la actualizacion es incorrecto')
+
+        }
+
+        let page_number = propAct.current_page
+        let page_address = make_property_address(record_id, nameProp, page_number)
+        let page_container = getContainer(context, page_address, "PROPERTY" )
+
+
+        let pageact = null;
+        let page;
+        for (page of page_container.entries) {
+
+            if (page.name !== nameProp ) {
+                reject('El usuario no esta autorizado')
+            }
+            else {
+
+                pageact = page
+            }
+
+        }
+
+        let reported_value = make_new_reported_value(reporteact,timestamp,updateProp)
+        pageact.reported_values.push([reported_value])
+
+        await setContainer(context,page_address,page_container,"PROPERTY")
+
+
+
+    }
+
+
+
 }
 
 async function finalizeRecord(context, signerPublicKey, timestamp, {record_id}) {
-    const agentAddress = make_agent_address(signerPublicKey)
+   let recordtemp = await getRecord(context,record_id)
 
-    const state = await context.getState([agentAddress])
-
-    // Validation: System Admin is already recorded.
-    if (state[agentAddress].length > 0) {
-        reject('Ya existe el usuario')
+    if(isOwner(record_id, signerPublicKey|| isCustodian(record_id,signerPublicKey)))
+    {
+        reject('El susuario no tiene los permisos para eealizar la accion')
     }
 
-    // State update.
-    const updates = {}
+    if (recordtemp.record.final === true) {
 
-    updates[agentAddress] = Agent.encode({
-        publicKey: signerPublicKey,
-        timestamp: timestamp,
-        name: name,
-    }).finish()
+        reject('El cheque ya esta en estado protestado o materializado ')
+    }
 
-    await context.setState(updates)
+    recordtemp.record.final = true
+
+    await setContainer(context,recordtemp.address,recordtemp.container,"RECORD")
+
 }
 
 async function createProposal(context, signerPublicKey, timestamp, {record_id, receiving_agent, role, properties}) {
-    const agentAddress = make_agent_address(signerPublicKey)
 
-    const state = await context.getState([agentAddress])
+    await verifyAgent(context,signerPublicKey)
+    await verifyAgent(context,receiving_agent)
 
-    // Validation: System Admin is already recorded.
-    if (state[agentAddress].length > 0) {
-        reject('Ya existe el usuario')
+    let proposal_address = make_proposal_address(
+        record_id, receiving_agent)
+
+    let proposal_container = getContainer(context,proposal_address,"PROPOSAL")
+
+    let open_proposals = []
+
+
+    for(var proposal2 of proposal_container.entries){
+
+        if(proposal2.status === Proposal.OPEN){
+        open_proposals.push(proposal2)
+
+        }
     }
 
-    // State update.
-    const updates = {}
+    for (var proposal3 of open_proposals) {
 
-    updates[agentAddress] = Agent.encode({
-        publicKey: signerPublicKey,
-        timestamp: timestamp,
-        name: name,
-    }).finish()
+        if (proposal3.receiving_agent === receiving_agent && proposal3.role === role && proposal3.record_id === record_id) {
+            reject('Ya existe el proposal')
 
-    await context.setState(updates)
+        }
+    }
+
+    let recordtemp = await getRecord(context,record_id)
+
+    if(isOwner(record_id, signerPublicKey|| isCustodian(record_id,signerPublicKey)))
+    {
+        reject('El susuario no tiene los permisos para eealizar la accion')
+    }
+
+    if (recordtemp.record.final === true) {
+
+        reject('El cheque ya esta en estado protestado o materializado ')
+    }
+
+
+    let proposalnuevo = Proposal.create({
+        record_id:record_id,
+        timestamp:timestamp,
+        issuing_agent:signerPublicKey,
+        receiving_agent:receiving_agent,
+        role:role,
+        properties:properties,
+        status:Proposal.OPEN,
+
+    })
+
+    proposal_container.push.extend([proposalnuevo])
+
+    await setContainer(context,proposal_addres,proposal_container,"PROPOSAL")
+
+
 }
 
 
 async function answerProposal(context, signerPublicKey, timestamp, {record_id, receiving_agent, role, response}) {
-    const agentAddress = make_agent_address(signerPublicKey)
 
-    const state = await context.getState([agentAddress])
 
-    // Validation: System Admin is already recorded.
-    if (state[agentAddress].length > 0) {
-        reject('Ya existe el usuario')
-    }
-
-    // State update.
-    const updates = {}
-
-    updates[agentAddress] = Agent.encode({
-        publicKey: signerPublicKey,
-        timestamp: timestamp,
-        name: name,
-    }).finish()
-
-    await context.setState(updates)
 }
 
-async function revokeReporter(context, signerPublicKey, timestamp, {record_id, reporter_id, properties}) {
-    const agentAddress = make_agent_address(signerPublicKey)
+async function accept_proposal(context, signerPublicKey, timestamp, proposal ) {
 
-    const state = await context.getState([agentAddress])
+    let record = await getRecord(context, proposal.record_id)
 
-    // Validation: System Admin is already recorded.
-    if (state[agentAddress].length > 0) {
-        reject('Ya existe el usuario')
+    if(proposal.role === Proposal.OWNER){
+
+        if(isOwner(record.record,proposal.issuing_agent)){
+
+            record.record.owners.push([
+                Record.AssociatedAgent.create({
+                    agent_id:receiving_agent,
+                    timestamp:timestamp
+
+                })
+            ])
+
+        }
+        else{
+            return Proposal.CANCELED
+        }
+
+        await setContainer(context,record.address, record.container, "RECORD")
+
+        let recordtype = await get_record_type(context, record.record.record_type)
+
+        for (var prop of recordtype.record_type.properties) {
+
+            let proptemp = await get_property(context,proposal.record_id, prop.name)
+
+            let old_owner =  null
+
+            for(var reporter of prop.reporters){
+
+                if(reporter.public_key === proposal.issuing_agent ){
+
+                    old_owner = reporter
+                }
+
+            }
+
+            old_owner.authorized = false
+
+            let new_owner =  null
+            try {
+
+                for(var reporter of prop.reporters){
+
+                    if(reporter.public_key === proposal.receiving_agent ){
+
+                        new_owner = reporter
+                    }
+
+                }
+
+                if(!new_owner.authorized){
+                    new_owner.authorized = true
+
+                    await setContainer(context,proptemp.address, proptemp.container, "PROPERTY" )
+
+                }
+
+
+            }catch (e) {
+
+
+                new_owner = Property.Reporter.create({
+                    public_key:receiving_agent,
+                    authorized:true,
+                    index:proptemp.prop.reporters.length,
+
+                })
+
+                proptemp.prop.reporters.push([new_owner])
+                await setContainer(context,proptemp.address, proptemp.container, "PROPERTY" )
+
+            }
+
+
+
+
+
+
+
+
+
+
+
+        }
+
+        return Proposal.ACCEPTED
+    }
+    else if(proposal.role === Proposal.CUSTODIAN){
+
+
+        return Proposal.ACCEPTED
+    }
+    else if(proposal.role === Proposal.REPORTER){
+
+
+        return Proposal.ACCEPTED
     }
 
-    // State update.
-    const updates = {}
 
-    updates[agentAddress] = Agent.encode({
-        publicKey: signerPublicKey,
-        timestamp: timestamp,
-        name: name,
-    }).finish()
 
-    await context.setState(updates)
+}
+
+
+async function revokeReporter(context, signerPublicKey, timestamp, {record_id, reporter_id, properties}) {
+    let record = await getRecord(context, record_id)
+    if (isOwner(record_id, signerPublicKey)) {
+        return
+    }
+
+    if (record.record.final === true) {
+
+        reject('El cheque ya esta en estado protestado o materializado ')
+    }
+
+
+    let property;
+    for (property of properties) {
+
+        let tempProperty = await get_property(context, record_id, property)
+        let reporter = null
+        for (let reporterItem of tempProperty.prop.reporters) {
+
+            if (reporterItem.public_key !== reporter_id) {
+                reject('Ya se le quito los permisos a este usuario')
+            } else {
+                reporter = reporterItem
+            }
+
+
+        }
+
+        reporter.authorized = false
+        await setContainer(context, tempProperty.address, tempProperty.container, "PROPERTY")
+
+
+    }
+
+
+}
+
+async function verifyAgent(context, publicKey) {
+    let address = make_agent_address(publicKey)
+    let container = await getContainer(context, address, "AGENT")
+
+    for (agents of container.entries) {
+
+        if (agents.public_key !== publicKey) {
+            reject('No esta registrado el usuario')
+        }
+
+    }
+
+
 }
 
 async function isOwner(record, agent_id) {
-    return record.custodians[record.custodians.length-1].agent_id == agent_id
+    return record.owners[record.owners.length - 1].agent_id == agent_id
 }
 
 async function isCustodian(record, agent_id) {
-    return record.custodians[record.custodians.length-1].agent_id == agent_id
+    return record.custodians[record.custodians.length - 1].agent_id == agent_id
 }
 
 async function getRecord(context, record_id) {
-    let  recordAddress = make_record_address(record_id)
-    let record_container = getContainer(context, recordAddress, "RECORD")
+    let recordAddress = make_record_address(record_id)
+    let record_container = await getContainer(context, recordAddress, "RECORD")
 
+    let record2 = null
+    for (let recordItem of record_container.entries) {
+
+        if (recordItem.record_id !== record_id) {
+            reject('No existe el cheque')
+        } else {
+            record2 = recordItem
+        }
+
+    }
     var obj = {
+        record: record2,
         container: record_container,
         address: recordAddress
     }
@@ -478,9 +741,22 @@ async function getRecord(context, record_id) {
 async function get_record_type(context, type_name) {
     const type_address = make_record_type_address(type_name)
 
-    let type_container = getContainer(context, type_address, "RECORD_TYPE")
+    let type_container = await getContainer(context, type_address, "RECORD_TYPE")
 
+
+    let type2 = null
+    let typeItem;
+    for (typeItem of type_container.entries) {
+
+        if (typeItem.name !== type_name) {
+            reject('No se ha creado el modelo del cheque')
+        } else {
+            type2 = typeItem
+        }
+
+    }
     var obj = {
+        record_type: type2,
         container: type_container,
         address: type_address
     }
@@ -489,13 +765,23 @@ async function get_record_type(context, type_name) {
 }
 
 
-
 async function get_property(context, record_id, property_name) {
     const propertyAddress = make_property_address(record_id, property_name, 0)
 
-    let property_container = getContainer(context, propertyAddress, "PROPERTY")
+    let property_container = await getContainer(context, propertyAddress, "PROPERTY")
 
+    let prop2 = null
+    for (let propItem of property_container.entries) {
+
+        if (propItem.name !== property_name) {
+            reject('La propiedad no existe')
+        } else {
+            prop2 = propItem
+        }
+
+    }
     var obj = {
+        prop: prop2,
         container: property_container,
         address: propertyAddress
     }
@@ -508,7 +794,7 @@ async function set_new_property(context, record_id, property_name, struct_proper
     const propertyAddress = make_property_address(record_id, property_name, 0)
 
 
-    let property_container = getContainer(context, propertyAddress, "PROPERTY")
+    let property_container = await getContainer(context, propertyAddress, "PROPERTY")
 
 
     let newProperty = Property.create({
@@ -534,7 +820,7 @@ async function set_new_property(context, record_id, property_name, struct_proper
 
     property_container.entries.push([newProperty])
 
-    setContainer(context, propertyAddress, property_container)
+    await setContainer(context, propertyAddress, property_container, "PROPERTY")
 }
 
 
@@ -542,7 +828,7 @@ async function set_new_propertyPage(context, timestamp, record_id, property_name
     const propertyAddress = make_property_address(record_id, property_name, 0)
 
 
-    let property_container = getContainer(context, propertyAddress, "PROPERTY")
+    let property_container = await getContainer(context, propertyAddress, "PROPERTY")
 
     let page = PropertyPage.create({
         name: property_name,
@@ -551,7 +837,7 @@ async function set_new_propertyPage(context, timestamp, record_id, property_name
     })
 
 
-    if (value) {
+    if (value !== null) {
 
         page.reported_values.push()
     }
@@ -559,7 +845,7 @@ async function set_new_propertyPage(context, timestamp, record_id, property_name
 
     property_container.entries.push([page])
 
-    setContainer(context, propertyAddress, property_container)
+    await setContainer(context, propertyAddress, property_container, "PROPERTY")
 }
 
 async function make_new_reported_value(reporter_index, timestamp, prop) {
@@ -607,11 +893,7 @@ async function make_new_reported_value(reporter_index, timestamp, prop) {
     }
 
 
-
-
     return reported_value
-
-
 
 
 }
@@ -670,9 +952,7 @@ async function setContainer(context, address, container, entity) {
             entityContainer = Agent;
             break;
         case "PROPERTY":
-
             entityContainer = Property;
-
             break;
         case "PROPOSAL":
             entityContainer = Proposal;
