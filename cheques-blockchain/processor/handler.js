@@ -182,34 +182,42 @@ class ChequesHandler extends TransactionHandler {
  */
 async function crearUsuario(context, signerPublicKey, timestamp, {name}) {
 
+
     if (!name) {
         reject('El nombre del usuario no debe estar vacio')
     }
 
     const agentAddress = make_agent_address(signerPublicKey)
-    let container = await getContainer(context, agentAddress, "AGENT")
+    console.log("Comenzo")
+
+    let state = await context.getState([
+        agentAddress,
+    ])
+
+    const agenttemp = await Agent.decode(state[agentAddress])
+    console.log(agenttemp.publicKey)
 
 
+    if (agenttemp.publicKey === signerPublicKey) {
+        reject('Ya existe el usuario')
 
-    let agent;
-    for (agent of container.entries) {
+    }
+    else{
 
-        if (agent.public_key === signerPublicKey) {
-            reject('Ya existe el usuario')
+        let agent2 = Agent.create({
+            publicKey: signerPublicKey,
+            timestamp: timestamp,
+            name: name,
+        })
 
-        }
+        await setContainer(context, agentAddress, agent2, "AGENT")
+        console.log("creado")
     }
 
-    console.log("crear Agente")
-    let agent2 = Agent.create({
-        publicKey: signerPublicKey,
-        timestamp: timestamp,
-        name: name,
-    })
-    container.entries.push([agent2])
-    console.log("crear contenedor")
 
-    await setContainer(context, agentAddress, container, "AGENT")
+
+
+
 }
 
 /**
@@ -390,32 +398,26 @@ async function createRecordType(context, signerPublicKey, timestamp, {name, prop
 
     const address = make_record_type_address(name)
 
-    let container = getContainer(context, address, "RECORD_TYPE")
+
+    let state = await context.getState([
+        address,
+    ])
+
+    const container = await RecordType.decode(state[address])
+
+    console.log(container)
 
     let record_type = RecordType.create({
         name: name,
         properties: properties
 
     })
-
-    if(container.entries){
-    for (let rec_type of container.entries) {
-
-        if (rec_type.name === name) {
-            reject('Ya existe este tipo de cheque')
-
-        }
-    }
-
-
-        container.entries.push([record_type])
-        await setContainer(context, address, container, "RECORD_TYPE")
+    if (container.name === name) {
+        reject('Ya existe este tipo de cheque')
 
     }
-    else{
-        await setContainer(context, address, record_type, "RECORD_TYPE")
+    await setContainer(context, address, record_type, "RECORD_TYPE")
 
-    }
 
 
 
@@ -1022,13 +1024,15 @@ async function getContainer(context, address, entity) {
 
 
 
+
     console.log(entries)
 
     if (entries) {
+        console.log("entries")
 
-        return container = container.decode(entries[address])
+        let newcontainer = await container.decode(entries[address])
 
-
+return newcontainer
 
     }
 
