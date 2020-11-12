@@ -186,31 +186,76 @@ async function crearUsuario(context, signerPublicKey, timestamp, {name}) {
     if (!name) {
         reject('El nombre del usuario no debe estar vacio')
     }
+    //SE OBTIENE LA DIRECCION DEL USUARIO EN TERMINOS DEL BLOCKCHAIN
+    const address = make_agent_address(signerPublicKey)
 
-    const agentAddress = make_agent_address(signerPublicKey)
-    console.log("Comenzo")
+    //SE BUSCA LA DIRECCION DEL USUARIO EN EL BLOCKCHAIN
+    let state = await context.getState([address,])
 
-    let state = await context.getState([
-        agentAddress,
-    ])
-
-    const agenttemp = await Agent.decode(state[agentAddress])
-    console.log(agenttemp.publicKey)
+    //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
+    const agenttemp = await AgentContainer.decode(state[address])
 
 
+    //SI LLEGA ALGO DEL BLOCKCHAIN SIGNIFICA QUE YA EXISTE EL USUARIO
     if (agenttemp.publicKey === signerPublicKey) {
         reject('Ya existe el usuario')
-
     }
     else{
 
+        //SE CREA EL NUEVO USUARIO
         let agent2 = Agent.create({
             publicKey: signerPublicKey,
             timestamp: timestamp,
             name: name,
         })
 
-        await setContainer(context, agentAddress, agent2, "AGENT")
+
+        let t = true
+        for (var key in state) {
+            t = false
+
+
+            if (state[key]){
+
+                let updates = {}
+                let t = AgentContainer.decode(state[key])
+                t.entries.push(agent2)
+
+                //SE CODIFICA EL NUEVO USUARIO EN TERMINOS DEL BLOCKCHAIN
+                let se = await AgentContainer.encode(t).finish()
+                updates[address] = se
+                //SE CREA EL NUEVO USUARIO EN EL BLOCKCHAIN
+                await context.setState(updates)
+
+
+
+
+            }
+        }
+        if(t){
+            //ENTRA SI NO EXISTE UN CONTENEDOR DE USUARIOS EN EL BLOCKCHAIN
+
+
+
+            let newcontainer = AgentContainer.create({
+                entries: [],
+            })
+
+
+
+
+
+            newcontainer.entries.push(agent2)
+
+            let updates = {}
+            //SE CODIFICA EL NUEVO USUARIO EN TERMINOS DEL BLOCKCHAIN
+            let se = await AgentContainer.encode(newcontainer).finish()
+            updates[address] = se
+            //SE CREA EL NUEVO USUARIO EN EL BLOCKCHAIN
+            await context.setState(updates)
+        }
+
+
         console.log("creado")
     }
 

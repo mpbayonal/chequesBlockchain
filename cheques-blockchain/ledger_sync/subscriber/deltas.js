@@ -88,9 +88,15 @@ const stateAdder = address => {
 }
 
 const getEntries = ({ address, value }) => {
-  return protos[`${getProtoName(address)}Container`]
-    .decode(value)
-    .entries
+
+  console.log(getProtoName(address))
+  let t = protos[`${getProtoName(address)}Container`]
+  console.log(getProtoName(address))
+
+  let y = t.decode(value)
+  console.log(y)
+  return y.entries
+
 }
 
 const entryAdder = block => change => {

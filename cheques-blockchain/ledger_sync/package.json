@@ -26,9 +26,9 @@
     "dotenv": "^8.2.0",
     "js-schema": "^1.0.1",
     "lodash": "^4.17.4",
-    "protobufjs": "^6.8.0",
+    "protobufjs": "^6.10.1",
     "rethinkdb": "^2.3.3",
-    "sawtooth-sdk": "^1.0.0-rc"
+    "sawtooth-sdk": "1.0.5"
   },
   "devDependencies": {
     "nodemon": "^1.11.0",
