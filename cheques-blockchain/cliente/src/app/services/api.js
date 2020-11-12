@@ -16,13 +16,12 @@
  */
 'use strict'
 
-import * as m from "mithril";
-import * as _ from "lodash";
-import * as sjcl from "sjcl";
-
+const m = require('mithril')
+const _ = require('lodash')
+const sjcl = require('sjcl')
 
 const API_PATH = 'http://localhost:8020/'
-const STORAGE_KEY = 'asset_track.authorization'
+const STORAGE_KEY = 'fish_net.authorization'
 let authToken = null
 
 /**
@@ -71,6 +70,7 @@ export const baseRequest = opts => {
   const Authorization = getAuth()
   const authHeader = Authorization ? { Authorization } : {}
   opts.headers = _.assign(opts.headers, authHeader)
+  opts.url = API_PATH + opts.url
   return m.request(opts)
 }
 
@@ -105,4 +105,6 @@ export const postBinary = (endpoint, data) => {
     data
   })
 }
+
+
 

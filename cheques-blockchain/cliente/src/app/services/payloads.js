@@ -14,14 +14,11 @@
  * limitations under the License.
  * ----------------------------------------------------------------------------
  */
-'use strict'
-
 const _ = require('lodash')
 const protobuf = require('protobufjs')
 
 // Use the generated JSON to reference the .proto files in protos/
 const protoJson = require('../generated_protos.json')
-
 
 // Keys for payload actions
 const ACTIONS = [
@@ -107,7 +104,6 @@ actionMethods.createRecordType.enum = PropertySchema.DataType
 actionMethods.updateProperties.enum = PropertySchema.DataType
 actionMethods.createProposal.enum = Proposal.Role
 actionMethods.answerProposal.enum = actionMap.answerProposal.proto.Response
-
 
 export const obj = Object.assign({
   encode,

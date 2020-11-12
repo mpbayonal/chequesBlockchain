@@ -1,13 +1,21 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import {ButtonViewComponent} from "../cheques/cheques.component";
+import { LocalDataSource } from 'ng2-smart-table';
+import {Router} from '@angular/router';
+import * as _ from 'lodash';
+import {submit,makePrivateKey,setPrivateKey, getPrivateKey,clearPrivateKey} from '../../../services/transactions';
+import {get,getPublicKey,hashPassword,post,setAuth,clearAuth} from '../../../services/api';
+import * as parsing from '../../../services/parsing';
 
 @Component({
   selector: 'app-cheques-detalle',
   template: `
-    <ng2-smart-table [settings]="settings" [source]="data"></ng2-smart-table>
+    <ng2-smart-table [settings]="settings" [source]="source"></ng2-smart-table>
   `
 })
 export class ChequesDetalleComponent {
+
+  source: LocalDataSource;
 
   data = [
     {
@@ -143,5 +151,27 @@ export class ChequesDetalleComponent {
 
 
   };
+
+  constructor() {
+    this.source = new LocalDataSource();
+
+    get('agents')
+      .then(agents => {
+        const publicKey = getPublicKey()
+        let agents2 = agents.filter(agent => agent.key !== publicKey)
+
+        console.log(agents2)
+
+      })
+
+    get('records?recordType=cheque').then((records) => {
+      console.log(records)
+      this.source.load(records);
+    })
+
+
+
+  }
+
 
 }

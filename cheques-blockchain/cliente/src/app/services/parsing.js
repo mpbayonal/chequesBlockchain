@@ -16,16 +16,14 @@
  */
 'use strict'
 
-import * as _ from "lodash";
-import * as moment from "moment";
-
+const _ = require('lodash')
+const moment = require('moment')
 const { FLOAT_PRECISION } = require('./payloads')
 
 export const STRINGIFIERS = {
   LOCATION: v => `${v.latitude}, ${v.longitude}`,
-  weight: v => `${v}kg`,
-  temperature: v => `${v} °C`,
-  shock: v => `${v}g`,
+  tilt: v => `X: ${v.x}, Y: ${v.y}`,
+  shock: v => `Accel: ${v.accel}, Duration: ${v.duration}`,
   '*': v => JSON.stringify(v, null, 1).replace(/[{}"]/g, '')
 }
 
@@ -51,7 +49,7 @@ export const toInt = num => parseInt(parseFloat(num) * FLOAT_PRECISION)
 
 /**
  * Calls toFloat on a property value, or it's sub-values in the case of
- * an object or JSON object
+ * location, tilt, or shock
  */
 export const floatifyValue = value => {
   if (_.isString(value)) value = JSON.parse(value)
@@ -68,4 +66,5 @@ export const formatTimestamp = sec => {
   }
   return moment.unix(sec).format('MM/DD/YYYY, h:mm:ss a')
 }
+
 
