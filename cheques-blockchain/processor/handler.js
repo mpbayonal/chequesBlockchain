@@ -190,7 +190,7 @@ async function crearUsuario(context, signerPublicKey, timestamp, {name}) {
     const address = make_agent_address(signerPublicKey)
 
     //SE BUSCA LA DIRECCION DEL USUARIO EN EL BLOCKCHAIN
-    let state = await context.getState([address,])
+    let state = await context.getState([address])
 
     //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
     const agenttemp = await AgentContainer.decode(state[address])
@@ -274,11 +274,11 @@ async function crearCheque(
     context,
     signerPublicKey,
     timestamp,
-    {record_id, record_type, properties},
+    {recordId, recordType, properties},
 ) {
 
     // SE VALIDA QUE SE INGRESARON TODOS LOS DATOS
-    if (!record_id) {
+    if (!recordId) {
         reject('No se ingreso el id del cheque')
     }
 
@@ -288,109 +288,174 @@ async function crearCheque(
         reject('No se ingresaron los campos')
     }
 
-    // SE VALIDA QUE SE INGRESARON TODOS LOS CAMPOS
-    verifyAgent(context, signerPublicKey)
+    // SE VALIDA QUE EXISTE EL USUARIO
+    if(verificarUsuario(context, signerPublicKey)){
 
 
-    let recordAddress = make_record_address(record_id)
-    let constainer = await getContainer(context, recordAddress, "RECORD")
 
+        //SE OBTIENE LA DIRECCION DEL CHEQUE ESPECIFICO EN TERMINOS DEL BLOCKCHAIN
+        const address = make_record_address(recordId)
 
-    const agentAddress = make_agent_address(signerPublicKey)
+        //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
+        let state = await context.getState([address])
 
-    const recordType = make_record_type_address(record_type)
+        //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
+        const recordTemp = await RecordContainer.decode(state[address])
 
-    const state = await context.getState([agentAddress, idRecord, recordType])
-
-
-    if (state[agentAddress].length <= 0) {
-        reject('No existe el usuario')
-    }
-    if (state[idRecord].length > 0) {
-        reject('Ya existe un cheque con ese id')
-    }
-    if (state[recordType].length <= 0) {
-        reject('No se ha definido el modelo de cheques')
-    }
-
-
-    const recordtype = RecordType.decode(state[recordType])
-
-    var type_schemata = {};
-
-    var prop;
-    for (prop in recordtype.properties) {
-        type_schemata[prop.name] = prop
-    }
-
-    var required_properties = {};
-
-    for (var name in type_schemata) {
-        if (type_schemata[name].required) {
-            required_properties[name] = type_schemata[name]
+        //SE VALIDA QUE NO EXISTA UN CHEQUE CON EL MISMO ID
+        if(recordTemp.record_id === recordId){
+            reject('Ya existe un cheque con ese id')
         }
 
-    }
+        //SE OBTIENE LA DIRECCION DEL TIPO DE CHEQUE EN TERMINOS DEL BLOCKCHAIN
+        const addressType = make_record_type_address(recordType)
 
-    var provided_properties = {};
+        //SE BUSCA EL TIPO DEL CHEQUE EN EL BLOCKCHAIN
+        let stateType = await context.getState([addressType])
 
-    for (var prop2 in properties) {
+        //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
+        const typeTemp = await RecordContainer.decode(stateType[addressType])
 
-        provided_properties[prop2.name] = prop2
-
-    }
-
-
-    for (var prop3 in required_properties) {
-
-        if (prop3 in provided_properties) {
-
-
-        } else {
-            reject('Required property not provided')
+        //SE VALIDA QUE EXISTA EL TIPO DE CHEQUE
+        if(typeTemp.name !== recordType){
+            reject('No existe el tipo de cheque')
         }
 
-    }
-
-
-    for (var provided_name in provided_properties) {
-        let required_type = type_schemata[provided_name].data_type
-        let provided_type = provided_properties[provided_name].data_type
-
-        if (required_type !== provided_type) {
-
-            reject("El valor de la propiedad esta en un formato icorrecto")
+        //SE GUARDAN LOS CAMPOS QUE SE PUEDEN INGRESAR PARA EL TIPO DE CHEQUE INGRESADO
+        var type_schemata = {};
+        for (let prop in typeTemp.properties) {
+            type_schemata[prop.name] = prop
         }
 
+        //SE GUARDAN LOS CAMPOS OBLIGATORIOS PARA EL TIPO DE CHEQUE INGRESADO
+        var required_properties = {};
+        for (let name in type_schemata) {
+            if (type_schemata[name].required) {
+                required_properties[name] = type_schemata[name]
+            }
+
+        }
+
+        //SE GUARDAN LOS CAMPOS INGRESADOS POR EL USUARIO PARA LA CREACION DEL CHEQUE
+        var provided_properties = {};
+        for (let prop2 in properties) {
+
+            provided_properties[prop2.name] = prop2
+
+        }
+
+        //SE VALIDA QUE SE HAYAN INGRESADO TODOS LOS CAMPOS OBLIGATORIOS
+        for (let prop3 in required_properties) {
+
+            if (prop3 in provided_properties) {
+
+            } else {
+                reject('No se ingreso un campo obligatorio')
+            }
+
+        }
+
+
+        //SE VALIDA QUE TODOS LOS CAMPOS ESTEN EN EL FORMATO CORRECTO
+        for (let provided_name in provided_properties) {
+            let required_type = type_schemata[provided_name].data_type
+            let provided_type = provided_properties[provided_name].data_type
+
+            if (required_type !== provided_type) {
+
+                reject("El valor de uno de los campos esta en un formato icorrecto")
+            }
+
+        }
+
+
+        //SE CREA EL CHEQUE NUEVO
+        let ChequeNuevo = Record.create({
+            record_id: recordId,
+            record_type: recordType,
+            final: false,
+            owners: [],
+            custodians: []
+
+        })
+
+
+        ChequeNuevo.owners.push(Record.AssociatedAgent.create({
+            agent_id: signerPublicKey,
+            timestamp: timestamp,
+        }))
+
+        ChequeNuevo.custodians.push(Record.AssociatedAgent.create({
+            agent_id: signerPublicKey,
+            timestamp: timestamp,
+        }))
+
+        let t = true
+        for (let key in state) {
+            t = false
+            console.log(state[key])
+            // check if the property/key is defined in the object itself, not in parent
+            if (state[key]){
+
+                let updates = {}
+                let t = RecordContainer.decode(state[key])
+                t.entries.push(ChequeNuevo)
+                console.log(t)
+                //SE CODIFICA EL NUEVO CHEQUE EN TERMINOS DEL BLOCKCHAIN
+                let se = await RecordContainer.encode(t).finish()
+                updates[address] = se
+                console.log(updates)
+                //SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN
+                await context.setState(updates)
+                let state2 = await context.getState([
+                    address,
+                ])
+                const agenttemp2 = await RecordContainer.decode(state2[address])
+                const agenttemp3 = await Agent.decode(state2[address])
+                console.log(agenttemp2)
+                console.log(agenttemp3)
+
+            }
+        }
+        if(t){
+            //ENTRA SI NO EXISTE UN CONTENEDOR DE CHEQUES EN EL BLOCKCHAIN
+
+
+
+
+
+            let newcontainer = RecordContainer.create({
+                entries: [],
+            })
+
+
+
+            newcontainer.entries.push(ChequeNuevo)
+
+
+            let updates = {}
+            //SE CODIFICA EL NUEVO CHEQUE EN TERMINOS DEL BLOCKCHAIN
+            let se = await RecordContainer.encode(newcontainer).finish()
+            updates[address] = se
+            //SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN
+            await context.setState(updates)
+        }
+
+
+
+
+
+
+    }
+    else{
+
+        reject('No existe el usuario que quiere crear el cheque')
+
     }
 
 
-    let RecordNuevo = Record.create({
-        record_id: record_id,
-        record_type: record_type,
-        final: false,
-        owners: [],
-        custodians: []
 
-    })
-
-
-    RecordNuevo.owners.push(Record.AssociatedAgent.create({
-        agent_id: signerPublicKey,
-        timestamp: timestamp,
-    }))
-
-    RecordNuevo.custodians.push(Record.AssociatedAgent.create({
-        agent_id: signerPublicKey,
-        timestamp: timestamp,
-    }))
-
-    constainer.entries.push([RecordNuevo])
-
-    await setContainer(context, recordAddress, container, "RECORD")
-
-
-    for (var name2 in type_schemata) {
+    for (let name2 in type_schemata) {
 
         await set_new_property(
             context,
@@ -402,7 +467,8 @@ async function crearCheque(
             type_schemata[name].number_exponent,
             type_schemata[name2].unit,
             type_schemata[name2].data_type,
-            signerPublicKey)
+            signerPublicKey
+        )
 
         if (name2 in provided_properties) {
             set_new_propertyPage(context, timestamp, record_id, name2, null, 1)
@@ -587,6 +653,28 @@ async function finalizeRecord(context, signerPublicKey, timestamp, {record_id}) 
     recordtemp.record.final = true
 
     await setContainer(context, recordtemp.address, recordtemp.container, "RECORD")
+
+}
+
+/**
+ * Verififca si un usario existe en el blockchain
+ */
+async function verificarUsuario(context, publicKey) {
+    //SE OBTIENE LA DIRECCION DEL USUARIO EN TERMINOS DEL BLOCKCHAIN
+    const address = make_agent_address(publicKey)
+
+    //SE BUSCA LA DIRECCION DEL USUARIO EN EL BLOCKCHAIN
+    let state = await context.getState([address,])
+
+    //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
+    const agenttemp = await AgentContainer.decode(state[address])
+
+
+    //SI LLEGA ALGO DEL BLOCKCHAIN SIGNIFICA QUE YA EXISTE EL USUARIO
+    if (agenttemp.publicKey === signerPublicKey) {
+        return true
+    }
+    return false
 
 }
 

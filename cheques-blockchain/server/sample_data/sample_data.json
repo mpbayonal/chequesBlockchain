@@ -1,13 +1,35 @@
 {
   "records": [
 
+    {
+      "recordId": "456789345",
+      "recordType": "cheque",
+      "properties": [
+        {
+          "name": "tipo",
+          "dataType": 4,
+          "stringValue": "FISCAL"
+        },
+        {
+          "name": "estado",
+          "dataType": 4,
+          "stringValue": "ACTIVO"
+        },
+        {
+          "name": "valor",
+          "dataType": 3,
+          "numberValue": 2346789
+        }
+      ],
+      "ownerIndex": 0
+    }
   ],
 
   "agents": [
     {
       "username": "101945875786",
       "password": "ahab",
-      "publicKey": "03ba003ea48e3599f73939b7908ca361cf539cc0baa7b0a049c590bcc46e2ef55a",
+      "publicKey": "03ba003ea48e3599f73939b7988ca361cf539cc0baa7b0a049c590bcc46e2ef55a",
       "name": "Laura Martinez Garcia",
       "email": "ahab@pequod.co",
       "privateKey": "063f9ca21d4ef4955f3e120374f7c22272f42106c466a91d01779efba22c2cb6",
