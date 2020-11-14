@@ -1,4 +1,4 @@
-FROM node:8
+FROM node:10
 
 
 # Create app directory
@@ -10,4 +10,4 @@ WORKDIR /sawtooth-supply-chain/server
 COPY server/package.json .
 RUN npm install
 EXPOSE 3000/tcp
-CMD ["/usr/bin/node", "index.js"]
+CMD ["node", "index.js"]

@@ -1,4 +1,4 @@
-FROM node:12.13.0
+FROM node:10
 
 WORKDIR /sawtooth-supply-chain/ledger_sync
 
