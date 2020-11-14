@@ -128,7 +128,7 @@ services:
       - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
 
   rethink:
-    image: rethinkdb
+    image: rethinkdb:2.4.1
     container_name: cheques-rethink
     expose:
       - 8080
