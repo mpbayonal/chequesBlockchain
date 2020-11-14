@@ -1,4 +1,4 @@
-FROM node:12.13.0
+FROM node:10
 
 WORKDIR /processor
 
@@ -6,4 +6,4 @@ COPY package.json .
 
 RUN npm install
 
-ENTRYPOINT ["/usr/local/bin/node", "index.js"]
+ENTRYPOINT ["node", "index.js"]
