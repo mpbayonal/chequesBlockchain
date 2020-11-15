@@ -1,5 +1,9 @@
-FROM node:8
+FROM node:10.16.0 AS build
 
-WORKDIR /project/filetrack/clientFinal
+WORKDIR /sawtooth-supply-chain/cliente
+COPY cliente/package.json .
+RUN npm install
+COPY . /sawtooth-supply-chain/cliente
 
-CMD npm install && npm start
+
+
