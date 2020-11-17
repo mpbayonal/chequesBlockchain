@@ -136,7 +136,7 @@ export class DashboardComponent implements OnInit {
     const reporterPayloads2 = await obj.createProposal({
       recordId: this.idChequeUnique,
       receivingAgent: cheque.portador,
-      role: obj.createProposal.enum.REPORTER,
+      role: obj.createProposal.enum.CUSTODIAN,
       properties: []
     })
 

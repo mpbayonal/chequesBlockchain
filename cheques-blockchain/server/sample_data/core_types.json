@@ -13,13 +13,8 @@
         "required": true
       },
       {
-        "name": "fecha",
-        "dataType": 4,
-        "required": true
-      },
-      {
         "name": "valor",
-        "dataType": 4,
+        "dataType": 3,
         "required": true
       }
     ]

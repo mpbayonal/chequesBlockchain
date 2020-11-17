@@ -16,10 +16,11 @@
  */
 'use strict'
 
+import {sha512} from "js-sha512";
+
 const m = require('mithril')
 const _ = require('lodash')
 const sjcl = require('sjcl')
-const {createHash} = require('crypto')
 const secp256k1 = require('sawtooth-sdk/signing/secp256k1')
 const {
   Transaction,
@@ -48,6 +49,8 @@ setBatcherPubkey()
 
 
 export const createTxn = payload => {
+  var hash = sha512.update(payload).hex();
+
   const header = TransactionHeader.encode({
     signerPublicKey,
     batcherPublicKey,
@@ -56,7 +59,7 @@ export const createTxn = payload => {
     inputs: [NAMESPACE],
     outputs: [NAMESPACE],
     nonce: (Math.random() * 10 ** 18).toString(36),
-    payloadSha512: createHash('sha512').update(payload).digest('hex'),
+    payloadSha512: hash,
   }).finish()
 
   return Transaction.create({

@@ -19,15 +19,14 @@ services:
 
   cheques-client:
     container_name: cheques-client
-    build:
-      context: .
-      dockerfile: cliente/Dockerfile
-    expose:
-      - 3000
+    build: ./cliente
+    volumes: # Volume binding
+      - './cliente:/cliente'
     ports:
-      - 3000:3000
-    volumes:
-      - /sawtooth-supply-chain/cliente
+      - '4200:4200' # Port mapping
+    command: >
+      bash -c "npm install && ng serve --host 0.0.0.0 --port 4200"
+
 
   server:
     image: supply-server

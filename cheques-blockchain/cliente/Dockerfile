@@ -1,9 +1,7 @@
-FROM node:10.16.0 AS build
+FROM node:10 as build-step
 
-WORKDIR /sawtooth-supply-chain/cliente
-COPY cliente/package.json .
-RUN npm install
-COPY . /sawtooth-supply-chain/cliente
+RUN mkdir /cliente
+WORKDIR /cliente
+RUN npm install -g @angular/cli
 
-
-
+COPY . .
