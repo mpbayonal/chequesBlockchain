@@ -21,7 +21,6 @@ import {postBinary} from "./api";
 
 const { post } = require('./api')
 const _ = require('lodash')
-const { createHash } = require('crypto')
 import * as shajs from 'sha.js';
 import * as sjcl from "sjcl";
 const secp256k1 = require('sawtooth-sdk/signing/secp256k1')
