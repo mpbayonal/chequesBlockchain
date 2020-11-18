@@ -23,6 +23,8 @@ const HOST = config.DB_HOST
 const PORT = config.DB_PORT
 const NAME = config.DB_NAME
 
+console.log(process.env.RETHINK_HOST, ':',process.env.RETHINK_PORT, process.env.RETHINK_USER)
+
 r.connect({
   host: process.env.RETHINK_HOST,
   port: process.env.RETHINK_PORT,
