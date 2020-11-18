@@ -38,9 +38,9 @@ services:
         - http_proxy
         - https_proxy
         - no_proxy
-    volumes:
-      - .:/sawtooth-supply-chain
-      - /sawtooth-supply-chain/server/node_modules
+    # volumes:
+    #   - .:/sawtooth-supply-chain
+    #   - /sawtooth-supply-chain/server/node_modules
     expose:
       - 3000
     ports:
@@ -65,15 +65,15 @@ services:
     image: supply-ledger-sync
     container_name: cheques-ledger-sync
     build:
-      context: .
-      dockerfile: ledger_sync/Dockerfile
+      context: ./ledger_sync
+      dockerfile: Dockerfile
       args:
         - http_proxy
         - https_proxy
         - no_proxy
-    volumes:
-      - .:/sawtooth-supply-chain
-      - /sawtooth-supply-chain/ledger_sync/node_modules
+    # volumes:
+    #   - .:/sawtooth-supply-chain
+      # - /sawtooth-supply-chain/ledger_sync/node_modules
     depends_on:
       - validator
       - rethink
@@ -167,9 +167,9 @@ services:
     image: processor
     container_name: cheques-processor
     build: ./processor
-    volumes:
-      - ./processor:/processor
-      - /processor/node_modules
+    # volumes:
+    #   - ./processor:/processor
+    #   - /processor/node_modules
     depends_on:
       - validator
     environment:
