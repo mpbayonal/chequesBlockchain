@@ -48,7 +48,13 @@ const awaitDatabase = () => {
 }
 
 const connect = () => {
-  return r.connect({host: HOST, port: PORT, db: NAME})
+  return r.connect({
+    host: process.env.RETHINK_HOST,
+    port: process.env.RETHINK_PORT,
+    password: process.env.RETHINK_PASSWORD,
+    user: process.env.RETHINK_USER,
+    db: NAME
+  })
     .then(conn => {
       connection = conn
       return awaitDatabase()

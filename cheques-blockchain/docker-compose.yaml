@@ -87,7 +87,15 @@ services:
       - rethink
     environment:
       - VALIDATOR_URL=tcp://validator:4004
-      - DB_HOST=rethink
+      - RETRY_WAIT=5000
+
+      - RETHINK_HOST=rethink
+      - RETHINK_PORT=28015
+      - RETHINK_PASSWORD=
+      - RETHINK_USER=admin
+      - DB_NAME=supply_chain
+
+      
       - 'http_proxy=${http_proxy}'
       - 'https_proxy=${https_proxy}'
       - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
