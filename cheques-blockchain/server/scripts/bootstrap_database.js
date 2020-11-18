@@ -23,7 +23,12 @@ const HOST = config.DB_HOST
 const PORT = config.DB_PORT
 const NAME = config.DB_NAME
 
-r.connect({host: HOST, port: PORT})
+r.connect({
+  host: process.env.RETHINK_HOST,
+  port: process.env.RETHINK_PORT,
+  password: process.env.RETHINK_PASSWORD,
+  user: process.env.RETHINK_USER
+})
   .then(conn => {
     console.log(`Creating "${NAME}" database...`)
     r.dbList().contains(NAME).run(conn)
