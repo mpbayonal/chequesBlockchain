@@ -189,4 +189,4 @@ services:
     depends_on:
       - validator
     environment:
-      - VALIDATOR_URL=tcp://validator:4004
+      - VALIDATOR=tcp://validator:4004
