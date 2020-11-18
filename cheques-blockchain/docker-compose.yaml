@@ -17,23 +17,23 @@ version: '2.1'
 
 services:
 
-  cheques-client:
-    container_name: cheques-client
-    build: ./cliente
-    volumes: # Volume binding
-      - './cliente:/cliente'
-    ports:
-      - '4200:4200' # Port mapping
-    command: >
-      bash -c "npm install && ng serve --host 0.0.0.0 --port 4200"
+  # cheques-client:
+  #   container_name: cheques-client
+  #   build: ./cliente
+  #   volumes: # Volume binding
+  #     - './cliente:/cliente'
+  #   ports:
+  #     - '4200:4200' # Port mapping
+  #   command: >
+  #     bash -c "npm install && ng serve --host 0.0.0.0 --port 4200"
 
 
   server:
     image: supply-server
     container_name: cheques-server
     build:
-      context: .
-      dockerfile: server/Dockerfile
+      context: ./server
+      dockerfile: Dockerfile
       args:
         - http_proxy
         - https_proxy
@@ -58,7 +58,7 @@ services:
     command: |
       bash -c "
         node ./scripts/bootstrap_database.js &&
-        node index
+        node index.js
       "
 
   ledger-sync:
