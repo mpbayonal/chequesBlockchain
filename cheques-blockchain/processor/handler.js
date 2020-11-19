@@ -737,7 +737,7 @@ async function actualizarCampo(context, signerPublicKey, timestamp, {recordId, p
     var provided_properties = {};
     for (let prop2 in updates) {
         provided_properties[updates[prop2].name] = updates[prop2]
-        let prop = get_property(context, recordId, updates[prop2].name)
+        let prop = await get_property(context, recordId, updates[prop2].name)
         if (updates[prop2].fixed) {
 
             reject('La propiedad no puede ser actualizada')
@@ -752,7 +752,7 @@ async function actualizarCampo(context, signerPublicKey, timestamp, {recordId, p
         }
         let page_number = prop.currentPage
 
-        let page = get_property_page(context , recordId, updates[prop2].name, page_number)
+        let page = await get_property_page(context , recordId, updates[prop2].name, page_number)
 
         let reported_value = await make_new_reported_value(0, timestamp, updates[prop2], prop)
 
@@ -833,7 +833,7 @@ async function finalizeRecord(context, signerPublicKey, timestamp, {record_id}) 
 
 async function get_property(context, record_id, property_name) {
 
-    const address = make_property_address(record_id, property_name, 0)
+    const address = await make_property_address(record_id, property_name, 0)
 
     //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
     let state = await context.getState([address])
