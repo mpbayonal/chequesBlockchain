@@ -141,8 +141,24 @@ export class DashboardComponent implements OnInit {
     })
 
 
+    const payload = obj.updateProperties({
+      recordId: this.idChequeUnique,
+      properties: [{
+        name: "estado",
+        dataType: 4,
+        stringValue: "ENDOSO"
+      }]
+    })
+
+
     submit([newrecord].concat(reporterPayloads2), true, "false")
       .then(() => {
+
+        submit(payload, true)
+          .then(() => get(`records/${this.idChequeUnique}`))
+          .then(property => {
+            console.log(property)
+          })
 
         let agent3 = null
         for (agent3 of this.agentesLista) {

@@ -742,9 +742,13 @@ async function actualizarCampo(context, signerPublicKey, timestamp, {recordId, p
 
             reject('La propiedad no puede ser actualizada')
         }
+        console.log("updates[prop2].dataType")
+        console.log(updates[prop2].dataType)
+        console.log("prop")
+        console.log(prop)
         if (updates[prop2].dataType !== prop.dataType) {
 
-            reject('La pactualizacion no tiene el tipo de datos correcto')
+            reject('La actualizacion no tiene el tipo de datos correcto')
         }
         let page_number = prop.currentPage
 
@@ -920,7 +924,7 @@ async function createProposal(context, signerPublicKey, timestamp, {recordId, re
     if (!verificarUsuario(context, signerPublicKey)) {
         reject('No existe el usuario')
     }
-    if (!verificarUsuario(context, receiving_agent)) {
+    if (!verificarUsuario(context, receivingAgent)) {
         reject('No existe el usuario al que se va transferir el cheque')
     }
 
@@ -933,101 +937,116 @@ async function createProposal(context, signerPublicKey, timestamp, {recordId, re
     const recordTemp = await RecordContainer.decode(state[address])
     console.log(recordTemp)
     let existe = false
-    for (var key in recordTemp.entries) {
 
 
-        //SE VALIDA QUE NO EXISTA UN CHEQUE CON EL MISMO ID
-        if (recordTemp.entries[key].recordId === recordId) {
+    let t = true
+    let number = 0;
+    for (let key in state) {
 
-            existe = true
+        t = false
 
-
-
-            if (recordTemp.entries[key].final === true) {
-
-                reject('El estado del cheque ya no permite realizar ningun cambio')
-
-            }
-
-            let own = await Record.AssociatedAgent.create({
-                agentId: receivingAgent,
-                timestamp: timestamp,
-            })
+        if (state[key]) {
 
 
 
 
-            if (role === 2) {
-                recordTemp.entries[key].owners.push(own)
-            }
-            if (role === 3) {
-                recordTemp.entries[key].custodians.push(own)
-            }
 
-
-
-
-            const address2 = make_record_address(recordId)
-
-            //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
-            let state2 = await context.getState([address2])
-            let temp = await RecordContainer.decode(state[address2])
-            console.log(temp)
-            console.log("temp")
-
-            let t = true
             let number = 0;
-            for (let key in state2) {
+            for (let y in recordTemp.entries) {
 
-                t = false
+                if (recordTemp.entries[y].recordId === recordId) {
 
-                if (state2[key]) {
-
-
-                    let updates = {}
+                    existe = true
 
 
-                    let number = 0;
-                    for (let y in temp.entries) {
 
-                        if (temp.entries[y].recordId === recordId) {
-                            temp.entries.splice(number, 1);
+                    if (recordTemp.entries[y].final === true) {
 
-                        }
-                        number = number + 1
+                        reject('El estado del cheque ya no permite realizar ningun cambio')
+
                     }
 
-                    temp.entries.push(recordTemp.entries[key])
-                    temp.entries.sort((a, b) => a.recordId === b.recordId ? 0 : a.recordId < b.recordId || -1);
+                    let own = await Record.AssociatedAgent.create({
+                        agentId: receivingAgent,
+                        timestamp: timestamp,
+                    })
 
 
-                    //SE CODIFICA EL NUEVO CHEQUE EN TERMINOS DEL BLOCKCHAIN
-                    let se = await RecordContainer.encode(temp).finish()
-                    updates[address2] = se
 
-                    //SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN
-                    await context.setState(updates)
+
+
+                        recordTemp.entries[y].custodians.push(own)
+
+
+
+
+
+                    const address2 = make_record_address(recordId)
+
+                    //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
+                    let state2 = await context.getState([address2])
+                    let temp = await RecordContainer.decode(state[address2])
                     console.log(temp)
-                    console.log("Se anadio el record")
+                    console.log("temp")
 
-                    number = number + 1
-                    console.log("SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN")
-                    let state3 = await context.getState([
-                        address2
-                    ])
-                    const agenttemp2 = await RecordContainer.decode(state3[address2])
-                    console.log(agenttemp2)
+                    let t = true
+                    let number = 0;
+                    for (let key2 in state2) {
+
+                        t = false
+
+                        if (state2[key2]) {
+
+
+                            let updates = {}
+
+
+                            let number = 0;
+                            for (let j in temp.entries) {
+
+                                if (temp.entries[j].recordId === recordId) {
+                                    temp.entries.splice(number, 1);
+
+                                }
+                                number = number + 1
+                            }
+
+                            temp.entries.push(recordTemp.entries[y])
+                            temp.entries.sort((a, b) => a.recordId === b.recordId ? 0 : a.recordId < b.recordId || -1);
+
+
+                            //SE CODIFICA EL NUEVO CHEQUE EN TERMINOS DEL BLOCKCHAIN
+                            let se = await RecordContainer.encode(temp).finish()
+                            updates[address2] = se
+
+                            //SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN
+                            await context.setState(updates)
+                            console.log(temp)
+                            console.log("Se anadio el record")
+
+                            number = number + 1
+                            console.log("SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN")
+                            let state3 = await context.getState([
+                                address2
+                            ])
+                            const agenttemp2 = await RecordContainer.decode(state3[address2])
+                            console.log(agenttemp2)
+                        }
+                    }
+
+
+
                 }
+
+            }
+            if (!existe) {
+                reject('No existe un cheque con ese id')
             }
 
-
-
         }
+    }
 
-    }
-    if (!existe) {
-        reject('No existe un cheque con ese id')
-    }
+
 
 
 
@@ -1035,53 +1054,7 @@ async function createProposal(context, signerPublicKey, timestamp, {recordId, re
 }
 
 
-async function answerProposal(context, signerPublicKey, timestamp, {record_id, receiving_agent, role, response}) {
 
-    let proposal_address = make_proposal_address(
-        record_id, receiving_agent)
-    let proposal_container = getContainer(context, proposal_address, "PROPOSAL")
-
-
-    let proposal = null
-
-    try {
-        for (var proposal1 of proposal_container.entries) {
-
-            if (proposal1.status === Proposal.OPEN
-                && proposal1.receiving_agent === receiving_agent
-                && proposal1.role === role) {
-
-                proposal = proposal1
-            }
-
-        }
-    } catch (e) {
-        reject('No existe el proposal')
-    }
-
-    if (response === AnswerProposalAction.CANCEL) {
-        if (proposal.issuing_agent !== signerPublicKey) {
-            reject('Only the issuing agent can cancel')
-        }
-
-        proposal.status = Proposal.CANCELED
-    } else if (response === AnswerProposalAction.REJECT) {
-        if (proposal.receiving_agent !== signerPublicKey) {
-            reject('Only the receiving agent can reject')
-        }
-        proposal.status = Proposal.REJECTED
-    } else if (response === AnswerProposalAction.ACCEPT) {
-        if (proposal.receiving_agent !== signerPublicKey) {
-            reject('Only the receiving agent can accept')
-        }
-        proposal.status = await accept_proposal(context, signerPublicKey, timestamp, proposal)
-
-    }
-
-    await setContainer(context, proposal_address, proposal_container, "PROPOSAL")
-
-
-}
 
 async function accept_proposal(context, signerPublicKey, timestamp, proposal) {
 
@@ -1214,21 +1187,6 @@ async function revokeReporter(context, signerPublicKey, timestamp, {record_id, r
 
 }
 
-async function verifyAgent(context, publicKey) {
-    let address = make_agent_address(publicKey)
-    let container = await getContainer(context, address, "AGENT")
-
-    for (agents of container.entries) {
-
-        if (agents.public_key !== publicKey) {
-            reject('No esta registrado el usuario')
-        }
-
-    }
-
-
-}
-
 async function isOwner(record, agent_id) {
     return record.owners[record.owners.length - 1].agent_id == agent_id
 }
@@ -1287,29 +1245,6 @@ async function get_record_type(context, type_name) {
 }
 
 
-async function get_property(context, record_id, property_name) {
-    const propertyAddress = make_property_address(record_id, property_name, 0)
-
-    let property_container = await getContainer(context, propertyAddress, "PROPERTY")
-
-    let prop2 = null
-    for (let propItem of property_container.entries) {
-
-        if (propItem.name !== property_name) {
-            reject('La propiedad no existe')
-        } else {
-            prop2 = propItem
-        }
-
-    }
-    var obj = {
-        prop: prop2,
-        container: property_container,
-        address: propertyAddress
-    }
-
-    return obj
-}
 
 
 async function set_new_property(context, record_id, property_name, value, publickey) {
@@ -1461,14 +1396,14 @@ async function make_new_reported_value(reporter_index, timestamp, prop, property
 
     console.log(prop);
     switch (prop.dataType) {
-        case PropertySchema.DataType.BYTES:
+        case 1:
             reported_value = await PropertyPage.ReportedValue.create({
                 reporterIndex: reporter_index,
                 timestamp: timestamp,
                 bytesValue: prop.bytesValue
             })
             break;
-        case PropertySchema.DataType.BOOLEAN:
+        case 2:
 
             reported_value = await PropertyPage.ReportedValue.create({
                 reporterIndex: reporter_index,
@@ -1506,54 +1441,6 @@ async function make_new_reported_value(reporter_index, timestamp, prop, property
 }
 
 
-async function getContainer(context, address, entity) {
-
-    let container = null
-    switch (entity) {
-        case "AGENT":
-            container = AgentContainer;
-            break;
-        case "PROPERTY":
-            if (address.substr(-4) === "0000") {
-                container = PropertyContainer;
-            } else {
-                container = PropertyPageContainer;
-            }
-
-            break;
-        case "PROPOSAL":
-            container = ProposalContainer;
-            break;
-        case "RECORD":
-            container = RecordContainer;
-            break;
-        case "RECORD_TYPE":
-            container = RecordTypeContainer;
-            break;
-
-        default:
-            let text = "I have never heard of that fruit...";
-    }
-
-    const entries = await context.getState([address])
-
-
-    console.log(entries)
-
-    if (entries) {
-        console.log("entries")
-
-        let newcontainer = await container.decode(entries[address])
-
-        return newcontainer
-
-    }
-
-
-    return container
-
-
-}
 
 async function setContainer(context, address, container, entity) {
 

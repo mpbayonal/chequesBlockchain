@@ -1,6 +1,6 @@
 [
   {
-    "name": "cheques",
+    "name": "cheque",
     "properties": [
 
       {
@@ -21,7 +21,7 @@
     ]
   },
   {
-    "name": "cheque",
+    "name": "cheques",
     "properties": [
 
       {
