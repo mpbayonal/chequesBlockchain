@@ -1,7 +1,11 @@
-import { Router } from '@angular/router';
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import {LocalDataSource, ViewCell} from 'ng2-smart-table';
+import {Router} from '@angular/router';
+import * as _ from 'lodash';
+import {submit,makePrivateKey,setPrivateKey, getPrivateKey,clearPrivateKey} from '../../../services/transactions';
+import {get,getPublicKey,hashPassword,post,setAuth,clearAuth} from '../../../services/api';
+import * as parsing from '../../../services/parsing';
 
-import { ViewCell } from 'ng2-smart-table';
 
 @Component({
   selector: 'button-view',
@@ -37,80 +41,14 @@ export class ButtonViewComponent implements ViewCell, OnInit {
 @Component({
   selector: 'app-cheques',
   template: `
-    <ng2-smart-table [settings]="settings" [source]="data"></ng2-smart-table>
+    <ng2-smart-table [settings]="settings" [source]="source"></ng2-smart-table>
   `
 
 })
 export class ChequesComponent  {
 
+  source: LocalDataSource;
 
-
-  data = [
-    {
-      id: 46489586,
-      valor: 233300,
-      name: 'Patricia Lebsack',
-      tipo:'General',
-      email: 'Julianne.OConner@kory.org',
-      passed: 'Si',
-    },
-    {
-      id: 535678,
-      valor: 230900,
-      name: 'Chelsey Dietrich',
-      tipo:'General',
-      email: 'Lucio_Hettinger@annie.ca',
-      passed: 'No',
-    },
-    {
-      id: 6345678,
-      valor: 2333300,
-      name: 'Mrs. Dennis Schulist',
-      tipo:'General',
-      email: 'Karley_Dach@jasper.info',
-      passed: 'Si',
-    },
-    {
-      id: 723568,
-      valor: 233300,
-      name: 'Kurtis Weissnat',
-      tipo:'Fiscal',
-      email: 'Telly.Hoeger@billy.biz',
-      passed: 'No',
-    },
-    {
-      id: 834678,
-      valor: 222300,
-      name: 'Nicholas Runolfsdottir V',
-      tipo:'General',
-      email: 'Sherwood@rosamond.me',
-      passed: 'Si',
-    },
-    {
-      id: 9234688,
-      valor: 22300,
-      name: 'Glenna Reichert',
-      tipo:'No negociable',
-      email: 'Chaim_McDermott@dana.io',
-      passed: 'No',
-    },
-    {
-      id: 102346,
-      valor: 2300,
-      name: 'Clementina DuBuque',
-      tipo:'General',
-      email: 'Rey.Padberg@karina.biz',
-      passed: 'No',
-    },
-    {
-      id: 1133456,
-      valor: 24300,
-      name: 'Nicholas DuBuque',
-      tipo:'Abono en cuenta',
-      email: 'Rey.Padberg@rosamond.biz',
-      passed: 'Si',
-    },
-  ];
 
   settings = {
     actions:{
@@ -154,8 +92,8 @@ export class ChequesComponent  {
         filter: {
           type: 'checkbox',
           config: {
-            true: 'Si',
-            false: 'No',
+            true: true,
+            false: false,
             resetText: 'clear',
           },
         },
@@ -175,6 +113,98 @@ export class ChequesComponent  {
     },
   };
 
+
+  constructor() {
+    this.source = new LocalDataSource();
+    let usersdict = {}
+
+    get('agents')
+      .then(agents => {
+
+
+        for(let i in agents){
+          usersdict[agents[i].key] = agents[i]
+        }
+
+        let recordsList = []
+        get('records?recordType=cheque').then((records) => {
+
+          for(let i in records){
+
+            let newRecord = records[i]
+
+
+
+            const publicKey = getPublicKey()
+
+            let n = 0
+            for(let i in newRecord.updates.custodians){
+
+              if(n !== 0){
+
+                if( newRecord.updates.custodians[i].agentId === publicKey){
+
+
+                  let librador = usersdict[newRecord.updates.custodians[n-1].agentId].name
+                  let tipo = null
+                  let estado = null
+                  let valor = null
+                  for(let j in newRecord.properties){
+
+                    let propertie = newRecord.properties[j]
+                    if(propertie.name === "tipo"){
+
+                      tipo = propertie.value
+                    }
+                    if(propertie.name === "estado"){
+                      estado = propertie.value
+
+                    }
+                    if(propertie.name === "valor"){
+                      valor = propertie.value
+
+                    }
+
+                  }
+
+
+                  console.log(newRecord.updates.custodians[1])
+
+
+                  let temp = {
+                    id: newRecord.recordId,
+                    valor: valor,
+                    name: librador,
+                    tipo: tipo,
+                    passed: newRecord.final,
+                    button: 'Ver',
+                  }
+                  recordsList.push(temp)
+
+
+                }
+
+              }
+              n = n+1
+
+            }
+
+
+          }
+
+          console.log(recordsList)
+          this.source.load(recordsList);
+
+        })
+
+
+
+      })
+
+
+
+
+  }
 
 
 }

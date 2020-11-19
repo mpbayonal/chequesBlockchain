@@ -62,36 +62,35 @@ protos.compile()
       }
     })
 
-
-
-    // Create User
-    // Create Records
+    // Create Agents
     .then(() => {
-      console.log('Creating Records . . .')
-      const recordAdditions = records.map(record => {
-        const properties = record.properties.map(property => {
-          if (property.dataType === protos.PropertySchema.DataType.LOCATION) {
-            property.locationValue = protos.Location.create(property.locationValue)
-          }
-          return protos.PropertyValue.create(property)
-        })
-
-        return createTxn(agents[record.ownerIndex || 0].privateKey, encodeTimestampedPayload({
-          action: protos.SCPayload.Action.CREATE_RECORD,
-          createRecord: protos.CreateRecordAction.create({
-            recordId: record.recordId,
-            recordType: record.recordType,
-            properties
-          })
+      console.log('Creating Agents . . .')
+      const agentAdditions = agents.map(agent => {
+        return createTxn(agent.privateKey, encodeTimestampedPayload({
+          action: protos.SCPayload.Action.CREATE_AGENT,
+          createAgent: protos.CreateAgentAction.create({ name: agent.name })
         }))
       })
 
-      return submitTxns(recordAdditions)
+      return submitTxns(agentAdditions)
     })
 
-    // Transfer Custodianship
+    // Create Users
+    .then(() => {
+      console.log('Creating Users . . .')
+      const userRequests = agents.map(agent => {
+        const user = _.omit(agent, 'name', 'privateKey', 'hashedPassword')
+        user.password = agent.hashedPassword
+        return request({
+          method: 'POST',
+          url: `${SERVER}/users`,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(user)
+        })
+      })
 
-
+      return Promise.all(userRequests)
+    })
     .catch(err => {
       console.error(err.toString())
       process.exit()

@@ -88,9 +88,7 @@ export class DashboardComponent implements OnInit {
 
     this.chequesDisponibles = 23
     this.fondosDisponibles = 2000000
-    get('records?recordType=asset').then((records) => {
-      console.log(records)
-    })
+
 
 
   }

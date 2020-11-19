@@ -1,5 +1,13 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
+import {ActivatedRoute, Router} from "@angular/router";
+import {obj} from '../../services/payloads';
+
+import {OnDestroy} from '@angular/core';
+
+import * as _ from 'lodash';
+import {submit, makePrivateKey, setPrivateKey, getPrivateKey, clearPrivateKey} from '../../services/transactions';
+import {get, getPublicKey, hashPassword, post, setAuth, clearAuth} from '../../services/api';
 import * as parsing from '../../services/parsing';
 
 @Component({
@@ -19,14 +27,22 @@ export class DetalleComponent implements OnInit {
   /** Opciones de cargo en tipo de usuario Ferretero */
   public optCheque = ['General', 'Abono en cuenta', 'No negociable', 'Fiscal'];
 
+  public value;
+  public id;
+  public tipo;
+  public estado;
+  public primerPropietario;
+  public sePuedeEndosar;
   @Input() signingKey: any;
   @Input() state: any;
   @Input() idCheque:any;
   @Input() chequesDisponibles:any;
   @Input() fondosDisponibles:any;
+  endososLista = []
+  estadosLista = []
   crear = false;
 
-  constructor(
+  constructor(public router: Router, public route: ActivatedRoute,
     public fb: FormBuilder,
   ) {
     this.frmCheque = this.fb.group({
@@ -39,9 +55,111 @@ export class DetalleComponent implements OnInit {
 
   }
 
+
   ngOnInit(){
+// import ActivatedRoute
+    let id =  this.route.snapshot.paramMap.get('id') ;
+    this.id = id
+    console.log(id)
     this.chequesDisponibles = 23
     this.fondosDisponibles = 2000000
+
+
+
+
+
+    let usersdict = {}
+
+    get('agents')
+      .then(agents => {
+
+
+        for(let i in agents){
+          usersdict[agents[i].key] = agents[i]
+        }
+
+        get(`records/${id}`)
+          .then(newRecord => {
+
+
+            let tipo = null
+            let estado = null
+            let valor = null
+            for(let j in newRecord.properties){
+
+              let propertie = newRecord.properties[j]
+              if(propertie.name === "tipo"){
+
+                tipo = propertie.value
+              }
+              if(propertie.name === "estado"){
+                estado = propertie.value
+
+              }
+              if(propertie.name === "valor"){
+                valor = propertie.value
+
+              }
+
+            }
+
+            let t = getPublicKey()
+            console.log(t)
+            console.log(newRecord.custodian)
+            this.tipo = tipo
+            this.estado = estado
+            this.value = valor
+            this.primerPropietario = usersdict[newRecord.owner].name
+            if(newRecord.custodian.toString() === t.toString() && tipo != 'No negociable'){
+              this.sePuedeEndosar = true
+
+            }
+            let endoso = []
+
+
+            for(let y in newRecord.updates.custodians){
+
+
+              let dateTemp = new Date(newRecord.updates.custodians[y].timestamp*1000).toDateString()
+              let temp = {
+                id: dateTemp,
+                valor: newRecord.updates.custodians[y].agentId,
+                name: usersdict[newRecord.updates.custodians[y].agentId].name,
+              }
+              endoso.push(temp)
+
+            }
+            this.endososLista = endoso
+            console.log(this.endososLista)
+            let estadoList = []
+            for(let y in newRecord.updates.properties.estado) {
+
+              let dateTemp = new Date(newRecord.updates.properties.estado[y].timestamp*1000).toDateString()
+              let temp = {
+                id: dateTemp,
+                estado: newRecord.updates.properties.estado[y].value
+
+              }
+              estadoList.push(temp)
+
+            }
+            this.estadosLista = estadoList
+
+
+          })
+
+
+
+
+      })
+
+
+
+
+
+
+
+
 
 
 

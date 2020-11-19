@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {ButtonViewComponent} from "../cheques/cheques.component";
+import {LocalDataSource} from "ng2-smart-table";
 
 @Component({
   selector: 'app-detalle-cheque-tabla',
@@ -9,40 +10,9 @@ import {ButtonViewComponent} from "../cheques/cheques.component";
 })
 export class DetalleChequeTablaComponent {
 
-  data = [
-    {
-      id: "2020/07/05",
-      valor: 233300,
-      name: 'Patricia Lebsack',
-      tipo:'General',
-      email: 'Julianne.OConner@kory.org',
-      passed: 'Si',
-    },
-    {
-      id: "2019/06/15",
-      valor: 230900,
-      name: 'Chelsey Dietrich',
-      tipo:'General',
-      email: 'Lucio_Hettinger@annie.ca',
-      passed: 'No',
-    },
-    {
-      id: "2019/06/09",
-      valor: 2333300,
-      name: 'Mrs. Dennis Schulist',
-      tipo:'General',
-      email: 'Karley_Dach@jasper.info',
-      passed: 'Si',
-    },
-    {
-      id: "2019/06/01",
-      valor: 233300,
-      name: 'Kurtis Weissnat',
-      tipo:'Fiscal',
-      email: 'Telly.Hoeger@billy.biz',
-      passed: 'No',
-    }
-  ];
+  @Input() endosos: any;
+
+  @Input() data
 
   settings = {
     actions:{
@@ -58,7 +28,7 @@ export class DetalleChequeTablaComponent {
       },
 
       valor: {
-        title: 'Cedula',
+        title: 'Public Key',
       },
       name: {
         title: 'Nombre',
@@ -66,4 +36,13 @@ export class DetalleChequeTablaComponent {
 
     },
   };
+
+  constructor() {
+
+    this.data = this.endosos
+
+
+  }
+
+
 }

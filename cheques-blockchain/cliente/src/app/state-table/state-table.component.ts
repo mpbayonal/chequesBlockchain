@@ -1,5 +1,5 @@
 
-import { Component, OnInit } from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 
 
 @Component({
@@ -10,54 +10,9 @@ import { Component, OnInit } from '@angular/core';
 })
 export class StateTableComponent {
 
-  data = [
-    {
-      id: "2020/08/09",
-      name: 'Patricia Lebsack',
-      tipo:'Pagado',
-      email: 'Julianne.OConner@kory.org',
-      passed: 'Si',
-    },
-    {
-      id: "2020/08/09",
-      name: 'Patricia Lebsack',
-      tipo:'Presentado para Canje',
-      email: 'Julianne.OConner@kory.org',
-      passed: 'Si',
-    },
-    {
-      id: "2020/07/05",
-      valor: 230900,
-      name: 'Chelsey Dietrich',
-      tipo:'Endoso',
-      email: 'Lucio_Hettinger@annie.ca',
-      passed: 'No',
-    },
-    {
-      id: "2020/06/15",
-      valor: 230900,
-      name: 'Chelsey Dietrich',
-      tipo:'Endoso',
-      email: 'Lucio_Hettinger@annie.ca',
-      passed: 'No',
-    },
-    {
-      id: "2020/06/09",
-      valor: 230900,
-      name: 'Chelsey Dietrich',
-      tipo:'Endoso',
-      email: 'Lucio_Hettinger@annie.ca',
-      passed: 'No',
-    },
-    {
-      id: "2019/06/01",
-      valor: 2333300,
-      name: 'Mrs. Dennis Schulist',
-      tipo:'Activo',
-      email: 'Karley_Dach@jasper.info',
-      passed: 'Si',
-    }
-  ];
+  @Input() estados: any;
+
+  @Input() data
 
   settings = {
     actions:{
@@ -72,7 +27,7 @@ export class StateTableComponent {
         title: 'Fecha',
       },
 
-      tipo: {
+      estado: {
         title: 'Estado',
       },
 

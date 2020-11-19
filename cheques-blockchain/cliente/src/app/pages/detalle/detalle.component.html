@@ -8,26 +8,32 @@
 
           <div class="col-7 col-md-7">
             <div >
+              <h6 >Id del Cheque</h6>
+              <p >{{id}}
+
+              <p>
+            </div>
+            <div >
               <h6 >Valor</h6>
-              <p >30000
+              <p >{{value}}
 
               <p>
             </div>
             <div >
               <h6 >Estado</h6>
-              <p>Pagado
+              <p>{{estado}}
 
               <p>
             </div>
             <div >
               <h6 >Primer Propietario</h6>
-              <p >Monica Paola Bayona
+              <p >{{primerPropietario}}
 
               <p>
             </div>
             <div >
               <h6 >Tipo</h6>
-              <p >General
+              <p >{{tipo}}
 
               <p>
             </div>
@@ -45,7 +51,7 @@
 
 
           </div>
-          <div class="col-4 col-md-4">
+          <div class="col-4 col-md-4"  *ngIf="sePuedeEndosar">
 
             <button type="submit" class="btn btn-danger btn-round"  (click)="crear = true;" *ngIf="!crear">Endosar cheque</button>
             <button type="submit" class="btn btn-danger btn-round"  (click)="crear = false;" *ngIf="crear">Ver cheques</button>
@@ -71,7 +77,7 @@
         <h4 class="card-title">Cadena de Endosos</h4>
       </div>
       <div class="card-body">
-        <app-detalle-cheque-tabla></app-detalle-cheque-tabla>
+        <app-detalle-cheque-tabla [data]="endososLista" ></app-detalle-cheque-tabla>
 
       </div>
     </div>
@@ -88,7 +94,7 @@
         <h4 class="card-title">Historial de estados</h4>
       </div>
       <div class="card-body">
-        <state-tabla></state-tabla>
+        <state-tabla [data]="estadosLista"></state-tabla>
 
       </div>
     </div>
