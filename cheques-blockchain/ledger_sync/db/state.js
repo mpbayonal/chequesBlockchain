@@ -78,8 +78,10 @@ const addAgent = (agent, blockNum) => {
 }
 
 const addRecord = (record, blockNum) => {
-  return addBlockState('records', 'recordId', record.recordId,
+
+  let t = addBlockState('records', 'recordId', record.recordId,
                        record, blockNum)
+    return(t);
 }
 
 const addRecordType = (type, blockNum) => {

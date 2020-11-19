@@ -196,19 +196,23 @@ async function crearUsuario(context, signerPublicKey, timestamp, {name}) {
     const agenttemp = await AgentContainer.decode(state[address])
 
 
+    console.log("typeTemp.entries")
+
+
+    //SE VALIDA QUE EXISTA EL TIPO DE CHEQUE
+    let entro = false
     let t = true
     for (var key in agenttemp.entries) {
-        t = false
+        entro = true
 
-
-        //SI LLEGA ALGO DEL BLOCKCHAIN SIGNIFICA QUE YA EXISTE EL USUARIO
-        if (key.publicKey === signerPublicKey) {
+        //SE VALIDA QUE EXISTA EL TIPO DE CHEQUE
+        if (agenttemp.entries[key].publicKey === signerPublicKey) {
 
             reject('Ya existe el usuario')
-
-
         }
+
     }
+
     if (t) {
 
         //SE CREA EL NUEVO USUARIO
@@ -301,11 +305,17 @@ async function crearCheque(
         //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
         const recordTemp = await RecordContainer.decode(state[address])
         console.log(recordTemp)
+        for (var key in recordTemp.entries) {
 
-        //SE VALIDA QUE NO EXISTA UN CHEQUE CON EL MISMO ID
-        if (recordTemp.record_id === recordId) {
-            reject('Ya existe un cheque con ese id')
+
+            //SE VALIDA QUE NO EXISTA UN CHEQUE CON EL MISMO ID
+            if (recordTemp.entries[key].name === recordType) {
+
+                reject('Ya existe un cheque con ese id')
+            }
+
         }
+
 
         //SE OBTIENE LA DIRECCION DEL TIPO DE CHEQUE EN TERMINOS DEL BLOCKCHAIN
         const addressType = make_record_type_address(recordType)
@@ -321,8 +331,9 @@ async function crearCheque(
         let type = null
 
         //SE VALIDA QUE EXISTA EL TIPO DE CHEQUE
+        let entro = false
         for (var key in typeTemp.entries) {
-
+            entro = true
 
             //SE VALIDA QUE EXISTA EL TIPO DE CHEQUE
             if (typeTemp.entries[key].name !== recordType) {
@@ -330,9 +341,12 @@ async function crearCheque(
                 reject('No existe este tipo de cheque')
             }
             if (typeTemp.entries[key].name === recordType) {
-                    type = typeTemp.entries[key]
+                type = typeTemp.entries[key]
 
             }
+        }
+        if (!entro) {
+            reject('No existe este tipo de cheque')
         }
 
         console.log("typeTemp")
@@ -392,8 +406,8 @@ async function crearCheque(
         console.log("SE CREA EL CHEQUE NUEVO")
         //SE CREA EL CHEQUE NUEVO
         let ChequeNuevo = Record.create({
-            record_id: recordId,
-            record_type: recordType,
+            recordId: recordId,
+            recordType: recordType,
             final: false,
             owners: [],
             custodians: []
@@ -401,58 +415,57 @@ async function crearCheque(
         })
 
 
-        ChequeNuevo.owners.push(Record.AssociatedAgent.create({
-            agent_id: signerPublicKey,
+        let own = await Record.AssociatedAgent.create({
+            agentId: signerPublicKey,
             timestamp: timestamp,
-        }))
+        })
+        ChequeNuevo.owners.push(own)
 
-        ChequeNuevo.custodians.push(Record.AssociatedAgent.create({
-            agent_id: signerPublicKey,
-            timestamp: timestamp,
-        }))
+        ChequeNuevo.custodians.push(own)
 
         //SE OBTIENE LA DIRECCION DEL CHEQUE ESPECIFICO EN TERMINOS DEL BLOCKCHAIN
         const address2 = make_record_address(recordId)
 
         //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
-        let state2 = await context.getState([address])
-
-
+        let state2 = await context.getState([address2])
+        let temp = await RecordContainer.decode(state[address2])
+        console.log(temp)
+        console.log("temp")
 
         let t = true
-        let guardo = false
         let number = 0;
         for (let key in state2) {
 
             t = false
 
-            if (state2[key] && !guardo) {
-
+            if (state2[key]) {
 
 
                 let updates = {}
-                let t = RecordContainer.decode(state[key])
 
-                let number =0;
-                for(let y in t.entries){
 
-                    if(t.entries[y].record_id === recordId){
-                        t.entries.splice(number, 1);
+                let number = 0;
+                for (let y in temp.entries) {
+
+                    if (temp.entries[y].recordId === recordId) {
+                        temp.entries.splice(number, 1);
 
                     }
-                    number = number +1
+                    number = number + 1
                 }
 
-                t.entries.push(ChequeNuevo)
+                temp.entries.push(ChequeNuevo)
+                temp.entries.sort((a, b) => a.recordId === b.recordId ? 0 : a.recordId < b.recordId || -1);
 
 
                 //SE CODIFICA EL NUEVO CHEQUE EN TERMINOS DEL BLOCKCHAIN
-                let se = await RecordContainer.encode(t).finish()
-                updates[address] = se
+                let se = await RecordContainer.encode(temp).finish()
+                updates[address2] = se
 
                 //SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN
                 await context.setState(updates)
-                guardo = true
+                console.log(temp)
+                console.log("Se anadio el record")
 
                 number = number + 1
                 console.log("SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN")
@@ -460,7 +473,7 @@ async function crearCheque(
                     address2
                 ])
                 const agenttemp2 = await RecordContainer.decode(state3[address2])
-
+                console.log(agenttemp2)
 
 
             }
@@ -496,32 +509,51 @@ async function crearCheque(
     }
 
 
-
     for (let name2 in type_schemata) {
 
+        let new_property = await Property.create({
+            signer: signerPublicKey,
+            recordId: recordId,
+            name: type_schemata[name2].name,
+            dataType: type_schemata[name2].dataType,
+            currentPage: 1,
+            wrapped: false,
+            reporters: [],
+            fixed: type_schemata[name2].fixed,
+            numberExponent: type_schemata[name2].numberExponent,
+            unit: type_schemata[name2].unit,
+            enumOptions: type_schemata[name2].enumOptions,
+            structProperties: type_schemata[name2].structProperties
+        })
 
+        console.log("type_schemata DATOS")
+        console.log(name2)
+        console.log(type_schemata[name2])
 
         await set_new_property(
             context,
             recordId,
             name2,
-            type_schemata[name2].struct_properties,
-            type_schemata[name2].enum_options,
-            type_schemata[name2].fixed,
-            type_schemata[name2].number_exponent,
-            type_schemata[name2].unit,
-            type_schemata[name2].data_type,
+            new_property,
             signerPublicKey
         )
 
+        let page = await PropertyPage.create({
+            name: name2,
+            recordId: recordId,
+            reportedValues: []
+        })
+
+
         if (name2 in provided_properties) {
-            set_new_propertyPage(context, timestamp, recordId, name2, null, 1)
+            let provided_property = provided_properties[name2]
+            let reported_value = await make_new_reported_value(0, timestamp, provided_property, new_property)
 
-        } else {
-
-            set_new_propertyPage(context, timestamp, recordId, name2, provided_properties[name2], 1)
+            page.reportedValues.push(reported_value)
 
         }
+
+        await set_new_propertyPage(context, timestamp, recordId, name2, page, 1)
 
 
     }
@@ -568,7 +600,6 @@ async function createRecordType(context, signerPublicKey, timestamp, {name, prop
 
     const container = await RecordType.decode(state[address])
 
-    console.log(container)
 
     //SE CREA EL NUEVO TIPO DE CHEQUE
     let record_type = RecordType.create({
@@ -576,16 +607,31 @@ async function createRecordType(context, signerPublicKey, timestamp, {name, prop
         properties: properties
 
     })
+    console.log(container)
+    console.log(container.entries)
 
-    for (var key in container.entries) {
+    //SE BUSCA EL TIPO DEL CHEQUE EN EL BLOCKCHAIN
+    let stateType = await context.getState([address])
+
+    //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
+    const typeTemp = await RecordTypeContainer.decode(stateType[address])
 
 
-        //SI LLEGA ALGO DEL BLOCKCHAIN SIGNIFICA QUE YA EXISTE EL TIPO DE CHEQUE
-        if (container.entries[key].name === name) {
+    console.log("typeTemp.entries")
+    let type = null
+
+    //SE VALIDA QUE EXISTA EL TIPO DE CHEQUE
+    let entro = false
+    for (var key in typeTemp.entries) {
+        entro = true
+
+        //SE VALIDA QUE EXISTA EL TIPO DE CHEQUE
+        if (typeTemp.entries[key].name === name) {
 
             reject('Ya existe este tipo de cheque')
         }
     }
+
 
     console.log("entro")
     let t = true
@@ -596,7 +642,7 @@ async function createRecordType(context, signerPublicKey, timestamp, {name, prop
         if (state[key]) {
 
             let updates = {}
-            let t = RecordTypeContainer.decode(state[key])
+            let t = RecordTypeContainer.decode(state[address])
             t.entries.push(record_type)
             console.log(t)
             //SE CODIFICA EL NUEVO TIPO DE CHEQUE EN TERMINOS DEL BLOCKCHAIN
@@ -649,98 +695,116 @@ async function createRecordType(context, signerPublicKey, timestamp, {name, prop
  * @entrada {String} record_id Identificador del cheque
  * @entrada {Objeto} properties Campos que van a aser actualizados
  */
-async function actualizarCampo(context, signerPublicKey, timestamp, {record_id, properties}) {
-
-    let recordtemp = await getRecord(context, record_id)
-
-    if (recordtemp.record.final === true) {
-        //Revisar que el estado del cheque no sea protestado o materializado
-        reject('El cheque ya esta en estado protestado o materializado ')
-    }
-
-    let updateProp;
-    for (updateProp of properties) {
+async function actualizarCampo(context, signerPublicKey, timestamp, {recordId, properties}) {
 
 
-        let nameProp = updateProp.name
+
+    //SE OBTIENE LA DIRECCION DEL CHEQUE ESPECIFICO EN TERMINOS DEL BLOCKCHAIN
+    const address = make_record_address(recordId)
+
+    //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
+    let state = await context.getState([address])
+
+    //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
+    const recordTemp = await RecordContainer.decode(state[address])
+    console.log(recordTemp)
+    let existe = false
+    for (var key in recordTemp.entries) {
 
 
-        let data_typeProp = updateProp.data_type
-        let property_address = make_property_address(record_id, nameProp)
-        let prop = await getContainer(context, property_address, "PROPERTY")
+        //SE VALIDA QUE NO EXISTA UN CHEQUE CON EL MISMO ID
+        if (recordTemp.entries[key].recordId === recordId) {
+            existe = true
 
-        let propAct = null
-        let prop2;
-        let tipo = nameProp
-        for (prop2 of prop.entries) {
+            if (recordTemp.entries[key].final === true) {
 
-            if (prop2.name !== nameProp) {
-                reject('la propiedad no existe')
-            } else {
+                reject('El estado del cheque ya no permite realizar ningun cambio')
 
-
-            }
-            propAct = prop2
-
-        }
-
-        let reporteact = null;
-        let reporter;
-        for (reporter of prop.reporters) {
-
-            if (reporter.public_key === signerPublicKey && reporter.authorized) {
-                reporteact = reporter
-            } else {
-                reject('El usuario no esta autorizado')
-            }
-
-        }
-
-        if (data_typeProp !== propAct.data_type) {
-            reject('El tipo de datos de la actualizacion es incorrecto')
-
-        }
-
-        let page_number = propAct.current_page
-        let page_address = make_property_address(record_id, nameProp, page_number)
-        let page_container = getContainer(context, page_address, "PROPERTY")
-
-
-        let pageact = null;
-        let page;
-        for (page of page_container.entries) {
-
-            if (page.name !== nameProp) {
-                reject('El usuario no esta autorizado')
-            } else {
-
-                pageact = page
-            }
-
-        }
-
-        let reported_value = make_new_reported_value(reporteact, timestamp, updateProp)
-
-        if (nameProp === "estado") {
-
-            let ultimoEstado = pageact.reported_values[0]
-            if (ultimoEstado.string_value === "ENDOSO" && updateProp.string_value === "ACTIVO") {
-                reject('no se puede pasar del estado de ENDOSO a ATIVO')
-            }
-            if (ultimoEstado.string_value === "CANJE" &&
-                (updateProp.string_value !== "PAGADO" || updateProp.string_value !== "PROTESTADO")) {
-                reject('no se puede pasar del estado de ENDOSO a ATIVO')
             }
 
 
         }
-
-        pageact.reported_values.push([reported_value])
-
-        await setContainer(context, page_address, page_container, "PROPERTY")
-
 
     }
+    if (!existe) {
+        reject('No existe un cheque con ese id')
+    }
+
+
+    let updates = properties
+    console.log(updates)
+
+    var provided_properties = {};
+    for (let prop2 in updates) {
+        provided_properties[updates[prop2].name] = updates[prop2]
+        let prop = get_property(context, recordId, updates[prop2].name)
+        if (updates[prop2].fixed) {
+
+            reject('La propiedad no puede ser actualizada')
+        }
+        if (updates[prop2].dataType !== prop.dataType) {
+
+            reject('La pactualizacion no tiene el tipo de datos correcto')
+        }
+        let page_number = prop.currentPage
+
+        let page = get_property_page(context , recordId, updates[prop2].name, page_number)
+
+        let reported_value = await make_new_reported_value(0, timestamp, updates[prop2], prop)
+
+        page.reportedValues.push(reported_value)
+
+        page.reportedValues.sort((a, b) => a.timestamp === b.timestamp ? 0 : a.timestamp > b.timestamp || -1);
+
+        await set_new_propertyPage(context, timestamp, recordId,updates[prop2].name, page, page_number)
+
+        if(page.reportedValues.length >= 256 ){
+
+            let  new_page_number = page_number + 1
+            let PROPERTY_PAGE_MAX_LENGT = 16 ** 4 - 1
+            if(new_page_number > PROPERTY_PAGE_MAX_LENGT){
+                new_page_number = 1
+            }
+            let new_pageContainer = await get_property_page(context,recordId,updates[prop2].name,new_page_number)
+            let new_page = null;
+            let existe2 = false
+            for (var key3 in new_pageContainer.entries) {
+                existe2 = true
+
+                //SE VALIDA QUE NO EXISTA UN CHEQUE CON EL MISMO ID
+                if (new_pageContainer.entries[key3].name === updates[prop2].name) {
+
+                    new_pageContainer.entries[key3].reportedValues = []
+                    new_page = new_pageContainer.entries[key3]
+
+
+                }
+
+            }
+            if (!existe2) {
+
+                new_page = await PropertyPage.create({
+                    name: updates[prop2].name,
+                    recordId: recordId,
+                    reportedValues: []
+                })
+
+            }
+            await set_new_propertyPage(context, timestamp, recordId,updates[prop2].name,new_page,new_page_number)
+            prop.currentPage = new_page_number
+            if(new_page_number === 1 && !prop.wrapped ){
+                prop.wrapped = true
+
+            }
+            await set_new_property(context,recordId,updates[prop2].name,prop,signerPublicKey)
+
+
+
+        }
+
+
+    }
+
 
 
 }
@@ -763,6 +827,65 @@ async function finalizeRecord(context, signerPublicKey, timestamp, {record_id}) 
 
 }
 
+async function get_property(context, record_id, property_name) {
+
+    const address = make_property_address(record_id, property_name, 0)
+
+    //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
+    let state = await context.getState([address])
+
+    //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
+    const temp = await PropertyContainer.decode(state[address])
+    console.log(temp)
+    let existe = false
+    for (var key in temp.entries) {
+
+
+        //SE VALIDA QUE NO EXISTA UN CHEQUE CON EL MISMO ID
+        if (temp.entries[key].name === property_name) {
+            existe = true
+
+            return temp.entries[key]
+
+
+        }
+
+    }
+    if (!existe) {
+        reject('No existe la propiedad')
+    }
+
+}
+
+async function get_property_page(context, record_id, name, page_number) {
+
+    const address = make_property_address(record_id, name, page_number)
+
+    //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
+    let state = await context.getState([address])
+
+    //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
+    const temp = await PropertyPageContainer.decode(state[address])
+    console.log(temp)
+    let existe = false
+    for (var key in temp.entries) {
+
+
+        //SE VALIDA QUE NO EXISTA UN CHEQUE CON EL MISMO ID
+        if (temp.entries[key].name === name) {
+            existe = true
+
+            return temp.entries[key]
+
+
+        }
+
+    }
+    if (!existe) {
+        reject('No existe la pagina de la propiedad')
+    }
+}
+
 /**
  * Verififca si un usario existe en el blockchain
  */
@@ -771,34 +894,139 @@ async function verificarUsuario(context, publicKey) {
     const address = make_agent_address(publicKey)
 
     //SE BUSCA LA DIRECCION DEL USUARIO EN EL BLOCKCHAIN
-    let state = await context.getState([address,])
+    let state = await context.getState([address])
 
     //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
     const agenttemp = await AgentContainer.decode(state[address])
 
 
-    //SI LLEGA ALGO DEL BLOCKCHAIN SIGNIFICA QUE YA EXISTE EL USUARIO
-    if (agenttemp.publicKey === publicKey) {
-        return true
+    for (var key in agenttemp.entries) {
+
+
+        //SE VALIDA QUE EXISTA EL TIPO DE CHEQUE
+        if (agenttemp.entries[key].publicKey === publicKey) {
+            return true
+        }
+
     }
     return false
 
+
 }
 
-async function createProposal(context, signerPublicKey, timestamp, {record_id, receiving_agent, role, properties}) {
+async function createProposal(context, signerPublicKey, timestamp, {recordId, receivingAgent, role, properties}) {
 
 
-    if(!verificarUsuario(context, signerPublicKey)){
+    if (!verificarUsuario(context, signerPublicKey)) {
         reject('No existe el usuario')
     }
-    if(!verificarUsuario(context, receiving_agent)){
+    if (!verificarUsuario(context, receiving_agent)) {
         reject('No existe el usuario al que se va transferir el cheque')
     }
-    if(role === 2){
+
+    const address = make_record_address(recordId)
+
+    //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
+    let state = await context.getState([address])
+
+    //SE DECODIFICA LO QUE LLEGO DEL BLOCKCHAIN
+    const recordTemp = await RecordContainer.decode(state[address])
+    console.log(recordTemp)
+    let existe = false
+    for (var key in recordTemp.entries) {
+
+
+        //SE VALIDA QUE NO EXISTA UN CHEQUE CON EL MISMO ID
+        if (recordTemp.entries[key].recordId === recordId) {
+
+            existe = true
+
+
+
+            if (recordTemp.entries[key].final === true) {
+
+                reject('El estado del cheque ya no permite realizar ningun cambio')
+
+            }
+
+            let own = await Record.AssociatedAgent.create({
+                agentId: receivingAgent,
+                timestamp: timestamp,
+            })
+
+
+
+
+            if (role === 2) {
+                recordTemp.entries[key].owners.push(own)
+            }
+            if (role === 3) {
+                recordTemp.entries[key].custodians.push(own)
+            }
+
+
+
+
+            const address2 = make_record_address(recordId)
+
+            //SE BUSCA EL CHEQUE EN EL BLOCKCHAIN
+            let state2 = await context.getState([address2])
+            let temp = await RecordContainer.decode(state[address2])
+            console.log(temp)
+            console.log("temp")
+
+            let t = true
+            let number = 0;
+            for (let key in state2) {
+
+                t = false
+
+                if (state2[key]) {
+
+
+                    let updates = {}
+
+
+                    let number = 0;
+                    for (let y in temp.entries) {
+
+                        if (temp.entries[y].recordId === recordId) {
+                            temp.entries.splice(number, 1);
+
+                        }
+                        number = number + 1
+                    }
+
+                    temp.entries.push(recordTemp.entries[key])
+                    temp.entries.sort((a, b) => a.recordId === b.recordId ? 0 : a.recordId < b.recordId || -1);
+
+
+                    //SE CODIFICA EL NUEVO CHEQUE EN TERMINOS DEL BLOCKCHAIN
+                    let se = await RecordContainer.encode(temp).finish()
+                    updates[address2] = se
+
+                    //SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN
+                    await context.setState(updates)
+                    console.log(temp)
+                    console.log("Se anadio el record")
+
+                    number = number + 1
+                    console.log("SE CREA EL NUEVO CHEQUE EN EL BLOCKCHAIN")
+                    let state3 = await context.getState([
+                        address2
+                    ])
+                    const agenttemp2 = await RecordContainer.decode(state3[address2])
+                    console.log(agenttemp2)
+                }
+            }
+
+
+
+        }
 
     }
-    if(role === 3){
-
+    if (!existe) {
+        reject('No existe un cheque con ese id')
     }
 
 
@@ -865,7 +1093,7 @@ async function accept_proposal(context, signerPublicKey, timestamp, proposal) {
 
             record.record.owners.push([
                 Record.AssociatedAgent.create({
-                    agent_id: receiving_agent,
+                    agentId: receiving_agent,
                     timestamp: timestamp
 
                 })
@@ -1084,28 +1312,16 @@ async function get_property(context, record_id, property_name) {
 }
 
 
-async function set_new_property(context, record_id, property_name, struct_properties, enum_options, fixed, number_exponent, unit, data_type, publickey) {
-    const address = make_property_address(record_id, property_name, 0)
+async function set_new_property(context, record_id, property_name, value, publickey) {
+    const address = await make_property_address(record_id, property_name, 0)
     let state = await context.getState([address])
     const property_container = await PropertyContainer.decode(state[address])
 
 
-    let newProperty = Property.create({
-        signer: publickey,
-        record_id: record_id,
-        data_type: data_type,
-        current_page: 1,
-        wrapped: false,
-        reporters: [],
-        fixed: fixed,
-        number_exponent: number_exponent,
-        unit: unit,
-        enum_options: enum_options,
-        struct_properties: struct_properties
-    })
+    let newProperty = value
 
     newProperty.reporters.push(Property.Reporter.create({
-            public_key: publickey,
+            publicKey: publickey,
             authorized: true,
             index: 0
         }
@@ -1113,33 +1329,41 @@ async function set_new_property(context, record_id, property_name, struct_proper
 
 
     let t = true
-    for (var key in state) {
+    for (let key in state) {
         t = false
 
 
         if (state[key]) {
 
             let updates = {}
-            let t = PropertyContainer.decode(state[key])
 
 
-            let number =0;
-            for(let y in t.entries){
+            let number = 0;
+            for (let y in property_container.entries) {
 
-                if(t.entries[y].name === property_name){
-                    t.entries.splice(number, 1);
+                if (property_container.entries[y].name === property_name) {
+                    property_container.entries.splice(number, 1);
 
                 }
                 number = number + 1
             }
 
-            t.entries.push(newProperty)
-
+            property_container.entries.push(newProperty)
+            property_container.entries.sort((a, b) => a.name === b.name ? 0 : a.name < b.name || -1);
+            console.log(property_container)
+            console.log("Se anadio la property")
             //SE CODIFICA EL NUEVO USUARIO EN TERMINOS DEL BLOCKCHAIN
-            let se = await PropertyContainer.encode(t).finish()
+            let se = await PropertyContainer.encode(property_container).finish()
             updates[address] = se
             //SE CREA EL NUEVO USUARIO EN EL BLOCKCHAIN
             await context.setState(updates)
+
+
+            let state2 = await context.getState([
+                address,
+            ])
+            const agenttemp2 = await PropertyContainer.decode(state2[address])
+            console.log(agenttemp2)
 
 
         }
@@ -1164,30 +1388,13 @@ async function set_new_property(context, record_id, property_name, struct_proper
     }
 
 
-
 }
 
 
 async function set_new_propertyPage(context, timestamp, record_id, property_name, value, page_number) {
     const address = make_property_address(record_id, property_name, page_number)
     let state = await context.getState([address])
-    const property_container = await Property.decode(state[address])
-
-    let page = PropertyPage.create({
-        name: property_name,
-        record_id: record_id,
-        reported_values: []
-    })
-    let reported = make_new_reported_value(0,timestamp,value)
-
-
-    if (value !== null) {
-
-        page.reported_values.push(reported)
-    }
-
-
-
+    const property_container = await PropertyPageContainer.decode(state[address])
 
     let t = true
     for (var key in state) {
@@ -1197,25 +1404,32 @@ async function set_new_propertyPage(context, timestamp, record_id, property_name
         if (state[key]) {
 
             let updates = {}
-            let p = PropertyPageContainer.decode(state[key])
-            let t = p.entries
+            let t = property_container.entries
 
             let number = 0;
-            for(let y in t){
+            for (let y in t) {
 
-                if(t[y].name === property_name){
-                    p.entries.splice(number, 1);
+                if (t[y].name === property_name) {
+                    property_container.entries.splice(number, 1);
 
                 }
                 number = number + 1
             }
-            p.entries.push(page)
+            property_container.entries.push(value)
+            property_container.entries.sort((a, b) => a.name === b.name ? 0 : a.name < b.name || -1);
 
+            console.log(property_container)
+            console.log("Se anadio la pagina")
             //SE CODIFICA EL NUEVO USUARIO EN TERMINOS DEL BLOCKCHAIN
-            let se = await PropertyPageContainer.encode(p).finish()
+            let se = await PropertyPageContainer.encode(property_container).finish()
             updates[address] = se
             //SE CREA EL NUEVO USUARIO EN EL BLOCKCHAIN
             await context.setState(updates)
+            let state2 = await context.getState([
+                address
+            ])
+            const agenttemp2 = await PropertyPageContainer.decode(state2[address])
+            console.log(agenttemp2)
 
 
         }
@@ -1229,7 +1443,7 @@ async function set_new_propertyPage(context, timestamp, record_id, property_name
         })
 
 
-        newcontainer.entries.push(page)
+        newcontainer.entries.push(value)
 
         let updates = {}
         //SE CODIFICA EL NUEVO USUARIO EN TERMINOS DEL BLOCKCHAIN
@@ -1240,46 +1454,47 @@ async function set_new_propertyPage(context, timestamp, record_id, property_name
     }
 }
 
-async function make_new_reported_value(reporter_index, timestamp, prop) {
+async function make_new_reported_value(reporter_index, timestamp, prop, property) {
 
-    let reported_value = PropertyPage.ReportedValue.create({
-        reporter_index: reporter_index,
-        timestamp: timestamp,
-    })
+    let reported_value = null
 
 
-    var DATA_TYPE_TO_ATTRIBUTE = {}
-
-    DATA_TYPE_TO_ATTRIBUTE[PropertySchema.BYTES] = 'bytes_value'
-    DATA_TYPE_TO_ATTRIBUTE[PropertySchema.STRING] = 'string_value'
-    DATA_TYPE_TO_ATTRIBUTE[PropertySchema.INT] = 'int_value'
-    DATA_TYPE_TO_ATTRIBUTE[PropertySchema.FLOAT] = 'float_value'
-
-
-    switch (prop.data_type) {
-        case PropertySchema.BYTES:
-            reported_value.bytes_value = prop.bytes_value;
+    console.log(prop);
+    switch (prop.dataType) {
+        case PropertySchema.DataType.BYTES:
+            reported_value = await PropertyPage.ReportedValue.create({
+                reporterIndex: reporter_index,
+                timestamp: timestamp,
+                bytesValue: prop.bytesValue
+            })
             break;
-        case PropertySchema.BOOLEAN:
+        case PropertySchema.DataType.BOOLEAN:
 
-            reported_value.boolean_value = prop.boolean_value;
+            reported_value = await PropertyPage.ReportedValue.create({
+                reporterIndex: reporter_index,
+                timestamp: timestamp,
+                booleanValue: prop.booleanValue
+            })
 
             break;
-        case PropertySchema.NUMBER:
+        case 3:
 
-            reported_value.boolean_value = prop.number_value;
+            reported_value = await PropertyPage.ReportedValue.create({
+                reporterIndex: reporter_index,
+                timestamp: timestamp,
+                numberValue: prop.numberValue
+            })
 
             break;
-        case PropertySchema.STRING:
+        case 4:
 
-            reported_value.boolean_value = prop.string_value;
+            reported_value = await PropertyPage.ReportedValue.create({
+                reporterIndex: reporter_index,
+                timestamp: timestamp,
+                stringValue: prop.stringValue
+            })
 
             break;
-        case PropertySchema.ENUM:
-            reported_value.bytes_value = prop.enum_value;
-            break;
-
-
         default:
             let text = "I have never heard of that fruit...";
     }

@@ -51,7 +51,10 @@ const resolveFork = block => {
 }
 
 const insert = block => {
+
+
   return db.modifyTable('blocks', blocks => {
+      console.log(blocks)
     return blocks
       .get(block.blockNum)
       .do(foundBlock => {
@@ -59,6 +62,7 @@ const insert = block => {
       })
   })
     .then(result => {
+      console.log(result)
       // If the blockNum did not already exist, or had the same id
       // there is no fork, return the block
       if (!result.blockId || result.blockId === block.blockId) {
@@ -66,6 +70,26 @@ const insert = block => {
       }
       return resolveFork(block)
     })
+}
+
+const insertCheque = block => {
+    return db.modifyTable('blocks', blocks => {
+        console.log(blocks)
+        return blocks
+            .get(block.blockNum)
+            .do(foundBlock => {
+                return r.branch(foundBlock, foundBlock, blocks.insert(block))
+            })
+    })
+        .then(result => {
+            console.log(result)
+            // If the blockNum did not already exist, or had the same id
+            // there is no fork, return the block
+            if (!result.blockId || result.blockId === block.blockId) {
+                return block
+            }
+            return resolveFork(block)
+        })
 }
 
 module.exports = {

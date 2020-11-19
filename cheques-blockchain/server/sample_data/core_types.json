@@ -1,14 +1,36 @@
 [
   {
-    "name": "cheque",
+    "name": "cheques",
     "properties": [
-        {
-          "name": "estado",
-          "dataType": 4,
-          "required": true
-        },
+
       {
         "name": "tipo",
+        "dataType": 4,
+        "required": true
+      },
+      {
+        "name": "estado",
+        "dataType": 4,
+        "required": true
+      },
+      {
+        "name": "valor",
+        "dataType": 3,
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "cheque",
+    "properties": [
+
+      {
+        "name": "tipo",
+        "dataType": 4,
+        "required": true
+      },
+      {
+        "name": "estado",
         "dataType": 4,
         "required": true
       },

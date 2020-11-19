@@ -80,28 +80,56 @@ const getObjectifier = address => {
 }
 
 const stateAdder = address => {
-  const addState = state[`add${getProtoName(address)}`]
+
+
   const toObject = getObjectifier(address)
   return (stateInstance, blockNum) => {
-    addState(toObject(stateInstance), blockNum)
+    if(getProtoName(address) === "Agent"){
+      state.addAgent(toObject(stateInstance), blockNum)
+
+    }
+
+    if(getProtoName(address) === "RecordType"){
+      state.addRecordType(toObject(stateInstance), blockNum)
+
+    }
+    if(getProtoName(address) === "Record"){
+      state.addRecord(toObject(stateInstance), blockNum)
+
+    }
+    if(getProtoName(address) === "PropertyPage"){
+
+      state.addPropertyPage(toObject(stateInstance), blockNum)
+
+    }
+    if(getProtoName(address) === "Property"){
+
+      state.addProperty(toObject(stateInstance), blockNum)
+
+
+    }
+
   }
 }
 
-const getEntries = ({ address, value }) => {
-
+const getEntries = ({ address, value }, block) => {
   console.log(getProtoName(address))
   let t = protos[`${getProtoName(address)}Container`]
   console.log(getProtoName(address))
 
   let y = t.decode(value)
-  console.log(y)
+
+
+
+
   return y.entries
 
 }
 
 const entryAdder = block => change => {
   const addState = stateAdder(change.address)
-  return Promise.all(getEntries(change).map(entry => {
+  return Promise.all(getEntries(change,block).map(entry => {
+
     return addState(entry, block.blockNum)
   }))
 }
