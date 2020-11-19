@@ -44,7 +44,12 @@ const awaitDatabase = () => {
     })
     .catch(() => {
 
-        r.connect({host: HOST, port: PORT})
+        r.connect({
+          host: process.env.RETHINK_HOST,
+          port: process.env.RETHINK_PORT,
+          password: process.env.RETHINK_PASSWORD,
+          user: process.env.RETHINK_USER
+        })
             .then(conn => {
                 console.log(`Creating "${NAME}" database...`)
                 r.dbList().contains(NAME).run(conn)
@@ -145,7 +150,13 @@ const awaitDatabase = () => {
 }
 
 const connect = () => {
-  return r.connect({host: HOST, port: PORT, db: NAME})
+  return r.connect({
+    host: process.env.RETHINK_HOST,
+    port: process.env.RETHINK_PORT,
+    db: NAME,
+    password: process.env.RETHINK_PASSWORD,
+    user: process.env.RETHINK_USER
+  })
     .then(conn => {
       connection = conn
       return awaitDatabase()

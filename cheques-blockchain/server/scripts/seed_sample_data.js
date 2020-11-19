@@ -16,6 +16,8 @@
  */
 'use strict'
 
+require('dotenv').config()
+
 const _ = require('lodash')
 const request = require('request-promise-native')
 const protos = require('../blockchain/protos')

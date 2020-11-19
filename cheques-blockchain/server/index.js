@@ -16,17 +16,21 @@
  */
 'use strict'
 
+require('dotenv').config()
+
+
 const express = require('express')
 const db = require('./db')
 const blockchain = require('./blockchain')
-require('dotenv').config()
 const protos = require('./blockchain/protos')
 const api = require('./api')
 const config = require('./system/config')
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const path = require('path');
 
-const PORT = config.PORT
+// const PORT = config.PORT
+const PORT = 3000
 const app = express()
 app.use(cors());
 app.use(bodyParser.json());
@@ -38,8 +42,14 @@ Promise.all([
 ])
   .then(() => {
     app.use('/', api)
+    app.use(express.static(path.join(__dirname, 'dist')));
+    app.get('/*', (req, res) => {
+      res.sendfile(path.join(__dirname, './dist', 'index.html'));
+    });
+
     app.listen(PORT, () => {
       console.log(`Supply Chain Server listening on port ${PORT}`)
     })
+    
   })
   .catch(err => console.error(err.message))
