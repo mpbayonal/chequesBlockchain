@@ -28,11 +28,16 @@ export class DetalleComponent implements OnInit {
   public optCheque = ['General', 'Abono en cuenta', 'No negociable', 'Fiscal'];
 
   public value;
+  public beneficiario;
+  public libradora;
   public id;
+  public fecha;
   public tipo;
   public estado;
   public primerPropietario;
   public sePuedeEndosar;
+  public optPortador = [];
+  public optPortador2 = [];
   @Input() signingKey: any;
   @Input() state: any;
   @Input() idCheque:any;
@@ -46,11 +51,7 @@ export class DetalleComponent implements OnInit {
     public fb: FormBuilder,
   ) {
     this.frmCheque = this.fb.group({
-      portador: ['', [Validators.required]],
-      suma: ['', [Validators.required]],
-      valor: ['', [Validators.required]],
-      lugar: ['', [Validators.required]],
-      tipo: ['', [Validators.required]],
+      portador: ['', [Validators.required]]
     });
 
   }
@@ -64,8 +65,23 @@ export class DetalleComponent implements OnInit {
     this.chequesDisponibles = 23
     this.fondosDisponibles = 2000000
 
+    let t = getPublicKey()
+    console.log(t)
+    let user = null
 
+    get('agents')
+      .then(agents => {
+        const publicKey = getPublicKey()
+        var agent = null
+        for (agent of agents) {
+          if (agent.key !== publicKey) {
+            this.optPortador2.push(agent)
+            this.optPortador.push(agent.name)
+          }
 
+        }
+
+      })
 
 
     let usersdict = {}
@@ -109,6 +125,7 @@ export class DetalleComponent implements OnInit {
             this.tipo = tipo
             this.estado = estado
             this.value = valor
+
             this.primerPropietario = usersdict[newRecord.owner].name
             if(newRecord.custodian.toString() === t.toString() && tipo != 'No negociable'){
               this.sePuedeEndosar = true
@@ -127,6 +144,7 @@ export class DetalleComponent implements OnInit {
                 name: usersdict[newRecord.updates.custodians[y].agentId].name,
               }
               endoso.push(temp)
+              this.libradora = usersdict[t.toString()].name
 
             }
             this.endososLista = endoso
@@ -167,21 +185,62 @@ export class DetalleComponent implements OnInit {
   /**
    * Funcion que valida y envia al registro la informacion del formulario
    */
-  onCrearCheque() {
+  async onEndosarCheque() {
     this.submited = true;
     if (this.frmCheque.invalid) {
       return false;
     }
-    this.creado = true
+
     let cheque = this.frmCheque.value;
-    console.log(cheque)
+    let fechaActual = new Date().toString()
+
+    console.log(fechaActual)
 
 
+    let tempFecha = new Date()
+    this.fecha = tempFecha.toDateString()
+
+    let key = null
+    let number = 0;
+    for(let agent in this.optPortador2){
+      console.log(this.optPortador2[agent])
+      if(cheque.portador === this.optPortador2[agent].name){
+
+        key = this.optPortador2[agent].key
+      }
+      number = number + 1;
+    }
+
+    const reporterPayloads2 = await obj.createProposal({
+      recordId: this.id,
+      receivingAgent: key,
+      role: obj.createProposal.enum.CUSTODIAN,
+      properties: []
+    })
 
 
+    const payload = obj.updateProperties({
+      recordId: this.id,
+      properties: [{
+        name: "estado",
+        dataType: 4,
+        stringValue: "ENDOSO"
+      }]
+    })
 
 
+    submit(reporterPayloads2, true, "false")
+      .then(() => {
 
+        submit(payload, true)
+          .then(() => get(`records/${this.id}`))
+          .then(property => {
+            console.log(property)
+          })
+
+        this.beneficiario = cheque.portador
+        this.creado = true
+      })
 
 
   }

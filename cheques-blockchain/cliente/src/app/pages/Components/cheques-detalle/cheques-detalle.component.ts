@@ -84,6 +84,7 @@ export class ChequesDetalleComponent {
         let recordsList = []
         get('records?recordType=cheque').then((records) => {
 
+
           for(let i in records){
 
             let newRecord = records[i]
@@ -91,6 +92,9 @@ export class ChequesDetalleComponent {
 
 
             const publicKey = getPublicKey()
+            console.log(publicKey)
+            console.log(newRecord)
+
             if(newRecord.owner === publicKey ){
               let tipo = null
               let estado = null
@@ -114,11 +118,11 @@ export class ChequesDetalleComponent {
               }
 
 
-              console.log(newRecord.updates.custodians[1])
+              console.log(newRecord.updates.custodians)
               let temp = {
                 id: newRecord.recordId,
                 valor: valor,
-                name: usersdict[newRecord.updates.custodians[1].agentId].name,
+                name: usersdict[newRecord.updates.custodians[0].agentId].name,
                 tipo: tipo,
                 button: 'Ver',
               }

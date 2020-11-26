@@ -120,7 +120,7 @@
             <h6 class="card-title float-right">Cheque No. 56878786  {{ idCheque }}</h6>
           </div>
         </div>
-        <form [formGroup]="frmCheque" (ngSubmit)="onCrearCheque()">
+        <form [formGroup]="frmCheque" (ngSubmit)="onEndosarCheque()">
           <div class="row">
             <div class="col-md-12 pr-1">
 
@@ -132,13 +132,17 @@
                   </div>
 
                 </div>
-                <input
-                  class="form-control"
+                <select
                   formControlName="portador"
+                  class="form-control input-login"
                   [ngClass]="{ 'is-invalid': submited && f.portador.errors }"
-                  type="text"
-                  placeholder="Escribe aquí el nombre del beneficiario"
-                />
+                >
+                  <option value="">Busca el nombre del beneficiario del endoso</option>
+                  <option [value]="item" *ngFor="let item of optPortador">{{
+                    item
+                    }}</option>
+                </select>
+
                 <div *ngIf="submited && f.portador.errors" class="invalid-feedback">
                   <div *ngIf="f.portador.errors.required">Nombre del beneficiario es requerido</div>
                 </div>
@@ -146,31 +150,6 @@
               </div>
             </div>
 
-            <div class="col-md-12 pr-1">
-
-              <div class="form-group">
-                <div class="row">
-
-
-                  <div class="col-md-7">
-                    <label>Cedula</label>
-
-                    <input
-                      class="form-control"
-                      formControlName="valor"
-                      [ngClass]="{ 'is-invalid': submited && f.valor.errors }"
-                      type="number"
-                      placeholder="Escribe aquí la cedula"
-                    />
-                    <div *ngIf="submited && f.valor.errors" class="invalid-feedback">
-                      <div *ngIf="f.valor.errors.required">valor requerido</div>
-
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
 
           </div>
 
@@ -199,7 +178,7 @@
         <h3 class="card-title"> Transacción exitosa</h3>
       </div>
       <div class="card-body">
-        <h5> El cheque <b>No. 56878786</b> fue endosado en favor de <b>Laura Martinez Castro </b> como beneficiaria, el dia <b>14 de octubre de 2020</b>, con Monica Paola Bayona Latorre como libradora, y con un valor de <b>dos millones de pesos</b> en Bogota D.C, y con fecha de vencimiento del <b>2 de abril de 2021</b>.</h5>
+        <h5> El cheque <b>No. {{id}}</b> fue endosado en favor de <b>{{beneficiario}}</b> como beneficiaria, el dia <b>{{fecha}}</b>, con {{libradora}} como librador, y con un valor de <b>{{value}}</b> en Bogota D.C.</h5>
         <h6 class="text-center">El token de la transacción fue <b>00009877bndn8997nbgbg9876</b></h6>
       </div>
       <div class="row">

@@ -1,3 +1,4 @@
+
 {
   "name": "cheques_server",
   "version": "0.0.0",
@@ -12,6 +13,7 @@
     "init": "node ./scripts/bootstrap_database.js",
     "test": "standard",
     "make-cheque": "DATA=\"../../server/sample_data/core_types.json\" node ./scripts/seed_core_types.js",
+    "make-cheque2": "DATA=\"../../server/sample_data/core_types-2.json\" node ./scripts/seed_core_types.js",
     "seed-example-users": "DATA=\"../../server/sample_data/sample_data.json\" node ./scripts/seed_sample_data.js"
   },
   "repository": {
