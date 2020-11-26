@@ -25,7 +25,10 @@ export class DashboardComponent implements OnInit {
   public creado = false;
   /** Opciones de cargo en tipo de usuario Ferretero */
   public optCheque = ['General', 'Abono en cuenta', 'No negociable', 'Fiscal'];
+  public optPortador2 = [];
   public optPortador = [];
+  public fecha;
+  public beneficiario;
 
   @Input() signingKey: any;
   @Input() state: any;
@@ -37,6 +40,7 @@ export class DashboardComponent implements OnInit {
   portadorNombre = ""
   agentesLista = []
   private x: any;
+  private libradora;
 
   constructor(
     public fb: FormBuilder,
@@ -63,7 +67,8 @@ export class DashboardComponent implements OnInit {
         var agent = null
         for (agent of agents) {
           if (agent.key !== publicKey) {
-            this.optPortador.push(agent.key)
+            this.optPortador2.push(agent)
+            this.optPortador.push(agent.name)
           }
 
         }
@@ -130,38 +135,44 @@ export class DashboardComponent implements OnInit {
       ]
     })
     console.log(newrecord)
+    let key = null
+    let number = 0;
+    for(let agent in this.optPortador2){
+      console.log(this.optPortador2[agent])
+      if(cheque.portador === this.optPortador2[agent].name){
+        key = this.optPortador2[agent].key
+      }
+      number = number + 1;
+    }
+
+
+    console.log(key)
 
     const reporterPayloads2 = await obj.createProposal({
       recordId: this.idChequeUnique,
-      receivingAgent: cheque.portador,
+      receivingAgent: key,
       role: obj.createProposal.enum.CUSTODIAN,
       properties: []
     })
 
 
-    const payload = obj.updateProperties({
-      recordId: this.idChequeUnique,
-      properties: [{
-        name: "estado",
-        dataType: 4,
-        stringValue: "ENDOSO"
-      }]
-    })
+
 
 
     submit([newrecord].concat(reporterPayloads2), true, "false")
       .then(() => {
+        let tempFecha = new Date()
+        this.fecha = tempFecha.toDateString()
+        this.beneficiario = cheque.portador
 
-        submit(payload, true)
-          .then(() => get(`records/${this.idChequeUnique}`))
-          .then(property => {
-            console.log(property)
-          })
-
+        let t = getPublicKey()
         let agent3 = null
         for (agent3 of this.agentesLista) {
           if (agent3.key === cheque.portador) {
             this.portadorNombre = agent3.name
+          }
+          if(agent3.key === t.toString()){
+            this.libradora =  agent3.name
           }
 
         }

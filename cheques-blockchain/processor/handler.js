@@ -421,7 +421,6 @@ async function crearCheque(
         })
         ChequeNuevo.owners.push(own)
 
-        ChequeNuevo.custodians.push(own)
 
         //SE OBTIENE LA DIRECCION DEL CHEQUE ESPECIFICO EN TERMINOS DEL BLOCKCHAIN
         const address2 = make_record_address(recordId)
@@ -455,7 +454,6 @@ async function crearCheque(
                 }
 
                 temp.entries.push(ChequeNuevo)
-                temp.entries.sort((a, b) => a.recordId === b.recordId ? 0 : a.recordId < b.recordId || -1);
 
 
                 //SE CODIFICA EL NUEVO CHEQUE EN TERMINOS DEL BLOCKCHAIN
@@ -758,7 +756,6 @@ async function actualizarCampo(context, signerPublicKey, timestamp, {recordId, p
 
         page.reportedValues.push(reported_value)
 
-        page.reportedValues.sort((a, b) => a.timestamp === b.timestamp ? 0 : a.timestamp > b.timestamp || -1);
 
         await set_new_propertyPage(context, timestamp, recordId,updates[prop2].name, page, page_number)
 
@@ -1012,7 +1009,6 @@ async function createProposal(context, signerPublicKey, timestamp, {recordId, re
                             }
 
                             temp.entries.push(recordTemp.entries[y])
-                            temp.entries.sort((a, b) => a.recordId === b.recordId ? 0 : a.recordId < b.recordId || -1);
 
 
                             //SE CODIFICA EL NUEVO CHEQUE EN TERMINOS DEL BLOCKCHAIN
@@ -1056,98 +1052,6 @@ async function createProposal(context, signerPublicKey, timestamp, {recordId, re
 
 
 
-async function accept_proposal(context, signerPublicKey, timestamp, proposal) {
-
-    let record = await getRecord(context, proposal.record_id)
-
-    if (proposal.role === Proposal.OWNER) {
-
-        if (isOwner(record.record, proposal.issuing_agent)) {
-
-            record.record.owners.push([
-                Record.AssociatedAgent.create({
-                    agentId: receiving_agent,
-                    timestamp: timestamp
-
-                })
-            ])
-
-        } else {
-            return Proposal.CANCELED
-        }
-
-        await setContainer(context, record.address, record.container, "RECORD")
-
-        let recordtype = await get_record_type(context, record.record.record_type)
-
-        for (var prop of recordtype.record_type.properties) {
-
-            let proptemp = await get_property(context, proposal.record_id, prop.name)
-
-            let old_owner = null
-
-            for (var reporter of prop.reporters) {
-
-                if (reporter.public_key === proposal.issuing_agent) {
-
-                    old_owner = reporter
-                }
-
-            }
-
-            old_owner.authorized = false
-
-            let new_owner = null
-            try {
-
-                for (var reporter of prop.reporters) {
-
-                    if (reporter.public_key === proposal.receiving_agent) {
-
-                        new_owner = reporter
-                    }
-
-                }
-
-                if (!new_owner.authorized) {
-                    new_owner.authorized = true
-
-                    await setContainer(context, proptemp.address, proptemp.container, "PROPERTY")
-
-                }
-
-
-            } catch (e) {
-
-
-                new_owner = Property.Reporter.create({
-                    public_key: receiving_agent,
-                    authorized: true,
-                    index: proptemp.prop.reporters.length,
-
-                })
-
-                proptemp.prop.reporters.push([new_owner])
-                await setContainer(context, proptemp.address, proptemp.container, "PROPERTY")
-
-            }
-
-
-        }
-
-        return Proposal.ACCEPTED
-    } else if (proposal.role === Proposal.CUSTODIAN) {
-
-
-        return Proposal.ACCEPTED
-    } else if (proposal.role === Proposal.REPORTER) {
-
-
-        return Proposal.ACCEPTED
-    }
-
-
-}
 
 
 async function revokeReporter(context, signerPublicKey, timestamp, {record_id, reporter_id, properties}) {
@@ -1284,7 +1188,7 @@ async function set_new_property(context, record_id, property_name, value, public
             }
 
             property_container.entries.push(newProperty)
-            property_container.entries.sort((a, b) => a.name === b.name ? 0 : a.name < b.name || -1);
+
             console.log(property_container)
             console.log("Se anadio la property")
             //SE CODIFICA EL NUEVO USUARIO EN TERMINOS DEL BLOCKCHAIN
@@ -1351,7 +1255,6 @@ async function set_new_propertyPage(context, timestamp, record_id, property_name
                 number = number + 1
             }
             property_container.entries.push(value)
-            property_container.entries.sort((a, b) => a.name === b.name ? 0 : a.name < b.name || -1);
 
             console.log(property_container)
             console.log("Se anadio la pagina")

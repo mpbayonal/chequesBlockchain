@@ -122,12 +122,15 @@ export class ChequesComponent  {
       .then(agents => {
 
 
+
         for(let i in agents){
           usersdict[agents[i].key] = agents[i]
         }
 
         let recordsList = []
         get('records?recordType=cheque').then((records) => {
+          console.log("lista de cheques")
+          console.log(records)
 
           for(let i in records){
 
@@ -183,6 +186,56 @@ export class ChequesComponent  {
 
 
                 }
+
+              }
+              else{
+
+
+
+                if( newRecord.updates.custodians[i].agentId === publicKey){
+
+
+                  console.log(newRecord.owner)
+                  let librador = usersdict[newRecord.owner].name
+                  let tipo = null
+                  let estado = null
+                  let valor = null
+                  for(let j in newRecord.properties){
+
+                    let propertie = newRecord.properties[j]
+                    if(propertie.name === "tipo"){
+
+                      tipo = propertie.value
+                    }
+                    if(propertie.name === "estado"){
+                      estado = propertie.value
+
+                    }
+                    if(propertie.name === "valor"){
+                      valor = propertie.value
+
+                    }
+
+                  }
+
+
+                  console.log(newRecord.updates.custodians[1])
+
+
+                  let temp = {
+                    id: newRecord.recordId,
+                    valor: valor,
+                    name: librador,
+                    tipo: tipo,
+                    passed: newRecord.final,
+                    button: 'Ver',
+                  }
+                  recordsList.push(temp)
+
+
+                }
+
+
 
               }
               n = n+1
