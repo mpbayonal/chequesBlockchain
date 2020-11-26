@@ -14,7 +14,7 @@ processor/src/messages/
 **/npm-debug.log
 
 # Webpack
-**/dist
+
 
 tests/sawtooth_sc_test/protobuf/
 

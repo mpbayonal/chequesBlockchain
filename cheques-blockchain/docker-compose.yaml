@@ -17,19 +17,32 @@ version: '2.1'
 
 services:
 
+
+  # cheques-client:
+  #   container_name: cheques-client
+  #   build: ./cliente
+  #   volumes: # Volume binding
+  #     - './cliente:/cliente'
+  #   ports:
+  #     - '4200:4200' # Port mapping
+  #   command: >
+  #     bash -c "npm install && ng serve --host 0.0.0.0 --port 4200"
+
+
+
   server:
     image: supply-server
     container_name: cheques-server
     build:
-      context: .
-      dockerfile: server/Dockerfile
+      context: ./server
+      dockerfile: Dockerfile
       args:
         - http_proxy
         - https_proxy
         - no_proxy
-    volumes:
-      - .:/sawtooth-supply-chain
-      - /sawtooth-supply-chain/server/node_modules
+    # volumes:
+    #   - .:/sawtooth-supply-chain
+    #   - /sawtooth-supply-chain/server/node_modules
     expose:
       - 3000
     ports:
@@ -39,7 +52,15 @@ services:
       - rethink
     environment:
       - VALIDATOR_URL=tcp://validator:4004
-      - DB_HOST=rethink
+
+      - RETHINK_HOST=rethink
+      - RETHINK_PORT=28015
+      - RETHINK_PASSWORD=
+      - RETHINK_USER=admin
+      - DB_NAME=supply_chain
+      - PRIVATE_KEY=1111111111111111111111111111111111111111111111111111111111111111
+      - JWT_SECRET=shhhhh
+
       - 'http_proxy=${http_proxy}'
       - 'https_proxy=${https_proxy}'
       - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
@@ -47,28 +68,36 @@ services:
     command: |
       bash -c "
         node ./scripts/bootstrap_database.js &&
-        node index
+        node index.js
       "
 
   ledger-sync:
     image: supply-ledger-sync
     container_name: cheques-ledger-sync
     build:
-      context: .
-      dockerfile: ledger_sync/Dockerfile
+      context: ./ledger_sync
+      dockerfile: Dockerfile
       args:
         - http_proxy
         - https_proxy
         - no_proxy
-    volumes:
-      - .:/sawtooth-supply-chain
-      - /sawtooth-supply-chain/ledger_sync/node_modules
+    # volumes:
+    #   - .:/sawtooth-supply-chain
+      # - /sawtooth-supply-chain/ledger_sync/node_modules
     depends_on:
       - validator
       - rethink
     environment:
       - VALIDATOR_URL=tcp://validator:4004
-      - DB_HOST=rethink
+      - RETRY_WAIT=5000
+
+      - RETHINK_HOST=rethink
+      - RETHINK_PORT=28015
+      - RETHINK_PASSWORD=
+      - RETHINK_USER=admin
+      - DB_NAME=supply_chain
+
+      
       - 'http_proxy=${http_proxy}'
       - 'https_proxy=${https_proxy}'
       - 'no_proxy=rest-api,server,eth0,validator,${no_proxy}'
@@ -156,10 +185,10 @@ services:
     image: processor
     container_name: cheques-processor
     build: ./processor
-    volumes:
-      - ./processor:/processor
-      - /processor/node_modules
+    # volumes:
+    #   - ./processor:/processor
+    #   - /processor/node_modules
     depends_on:
       - validator
     environment:
-      - VALIDATOR_URL=tcp://validator:4004
+      - VALIDATOR=tcp://validator:4004
