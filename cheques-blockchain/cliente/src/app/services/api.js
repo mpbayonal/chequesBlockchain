@@ -17,10 +17,12 @@
 'use strict'
 
 const m = require('mithril')
+const environment = require('../../environments/environment')
 const _ = require('lodash')
 const sjcl = require('sjcl')
 
-const API_PATH = 'http://localhost:8020/'
+const API_PATH =  environment.environment.apiUrl
+
 const STORAGE_KEY = 'fish_net.authorization'
 let authToken = null
 

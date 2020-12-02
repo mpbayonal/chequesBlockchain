@@ -47,6 +47,7 @@
     "ngx-toastr": "10.0.4",
     "node-sass": "^4.5.3",
     "octicons": "^6.0.1",
+    "pdfmake": "^0.1.68",
     "popper.js": "^1.12.3",
     "postcss-loader": "^2.0.6",
     "precss": "^2.0.0",

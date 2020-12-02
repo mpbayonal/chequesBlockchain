@@ -62,7 +62,7 @@ const insert = block => {
       })
   })
     .then(result => {
-      console.log(result)
+      console.log(result.blockId)
       // If the blockNum did not already exist, or had the same id
       // there is no fork, return the block
       if (!result.blockId || result.blockId === block.blockId) {
