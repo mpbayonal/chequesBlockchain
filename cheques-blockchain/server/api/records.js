@@ -28,13 +28,26 @@ const fetchProperty = ({recordId, propertyName}) => {
 const fetchRecord = ({recordId, authedKey}) => {
   return db.fetchRecord(recordId, authedKey)
 }
+const fetchRecord2 = ({recordId, authedKey}) => {
+  return db.fetchRecord2(recordId, authedKey)
+}
 
 const listRecords = params => {
   return db.listRecords(params.authedKey, _.pick(params, FILTER_KEYS))
 }
+const listRecordsNum = params => {
+  return db.listRecordsNum(params.authedKey, _.pick(params, FILTER_KEYS))
+}
+const listBlocks = params => {
+  return db.listRecords()
+}
+
 
 module.exports = {
+  listRecordsNum,
+  listBlocks,
   fetchProperty,
+  fetchRecord2,
   fetchRecord,
   listRecords
 }

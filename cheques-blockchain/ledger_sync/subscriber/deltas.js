@@ -127,6 +127,8 @@ const getEntries = ({ address, value }, block) => {
 }
 
 const entryAdder = block => change => {
+  console.log("block")
+  console.log(block)
   const addState = stateAdder(change.address)
   return Promise.all(getEntries(change,block).map(entry => {
 
@@ -135,6 +137,7 @@ const entryAdder = block => change => {
 }
 
 const handle = (block, changes) => {
+  console.log(block)
   deltaQueue.add(() => {
     const [ pageChanges, otherChanges ] = _.partition(changes, change => {
       return getProtoName(change.address) === 'PropertyPage'

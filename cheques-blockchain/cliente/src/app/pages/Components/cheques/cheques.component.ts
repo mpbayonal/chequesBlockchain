@@ -1,9 +1,9 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import {Component, OnInit, Input, Output, EventEmitter} from '@angular/core';
 import {LocalDataSource, ViewCell} from 'ng2-smart-table';
 import {Router} from '@angular/router';
 import * as _ from 'lodash';
-import {submit,makePrivateKey,setPrivateKey, getPrivateKey,clearPrivateKey} from '../../../services/transactions';
-import {get,getPublicKey,hashPassword,post,setAuth,clearAuth} from '../../../services/api';
+import {submit, makePrivateKey, setPrivateKey, getPrivateKey, clearPrivateKey} from '../../../services/transactions';
+import {get, getPublicKey, hashPassword, post, setAuth, clearAuth} from '../../../services/api';
 import * as parsing from '../../../services/parsing';
 
 
@@ -20,6 +20,7 @@ export class ButtonViewComponent implements ViewCell, OnInit {
   @Input() rowData: any;
 
   @Output() save: EventEmitter<any> = new EventEmitter();
+
   constructor(
     private router: Router
   ) {
@@ -31,7 +32,7 @@ export class ButtonViewComponent implements ViewCell, OnInit {
   }
 
   onClick() {
-    console.log(this.rowData)
+
     this.router.navigate(['/cheque', this.rowData.id]);
     this.save.emit(this.rowData);
   }
@@ -45,16 +46,16 @@ export class ButtonViewComponent implements ViewCell, OnInit {
   `
 
 })
-export class ChequesComponent  {
+export class ChequesComponent {
 
   source: LocalDataSource;
 
 
   settings = {
-    actions:{
-      add:false,
-      edit:false,
-      delete:false
+    actions: {
+      add: false,
+      edit: false,
+      delete: false
 
 
     },
@@ -70,10 +71,10 @@ export class ChequesComponent  {
             selectText: 'Select...',
             list: [
 
-              { value: 'General', title: 'General' },
-              { value: 'Abono en cuenta', title: 'Abono en cuenta' },
-              { value: 'No negociable', title: 'No negociable' },
-              { value: 'Fiscal', title: 'Fiscal' },
+              {value: 'General', title: 'General'},
+              {value: 'Abono en cuenta', title: 'Abono en cuenta'},
+              {value: 'No negociable', title: 'No negociable'},
+              {value: 'Fiscal', title: 'Fiscal'},
             ],
           },
         },
@@ -122,56 +123,56 @@ export class ChequesComponent  {
       .then(agents => {
 
 
-
-        for(let i in agents){
+        for (let i in agents) {
           usersdict[agents[i].key] = agents[i]
         }
 
         let recordsList = []
         get('records?recordType=cheque').then((records) => {
-          console.log("lista de cheques")
-          console.log(records)
 
-          for(let i in records){
+
+          for (let i in records) {
 
             let newRecord = records[i]
-
 
 
             const publicKey = getPublicKey()
 
             let n = 0
-            for(let i in newRecord.updates.custodians){
-
-              if(n !== 0){
-
-                if( newRecord.updates.custodians[i].agentId === publicKey){
+            let encontro = false
+            for (let i in newRecord.updates.custodians) {
 
 
-                  let librador = usersdict[newRecord.updates.custodians[n-1].agentId].name
+              if (n !== 0) {
+
+                if (newRecord.updates.custodians[i].agentId === publicKey) {
+
+                  encontro = true
+
+
+                } else if (encontro === true) {
+                  encontro = false
+                  let librador = usersdict[newRecord.updates.custodians[n - 1].agentId].name
                   let tipo = null
                   let estado = null
                   let valor = null
-                  for(let j in newRecord.properties){
+                  for (let j in newRecord.properties) {
 
                     let propertie = newRecord.properties[j]
-                    if(propertie.name === "tipo"){
+                    if (propertie.name === "tipo") {
 
                       tipo = propertie.value
                     }
-                    if(propertie.name === "estado"){
+                    if (propertie.name === "estado") {
                       estado = propertie.value
 
                     }
-                    if(propertie.name === "valor"){
+                    if (propertie.name === "valor") {
                       valor = propertie.value
 
                     }
 
                   }
-
-
-                  console.log(newRecord.updates.custodians[1])
 
 
                   let temp = {
@@ -184,42 +185,35 @@ export class ChequesComponent  {
                   }
                   recordsList.push(temp)
 
-
                 }
 
-              }
-              else{
+              } else {
 
 
+                if (newRecord.updates.custodians[i].agentId === publicKey) {
 
-                if( newRecord.updates.custodians[i].agentId === publicKey){
 
-
-                  console.log(newRecord.owner)
                   let librador = usersdict[newRecord.owner].name
                   let tipo = null
                   let estado = null
                   let valor = null
-                  for(let j in newRecord.properties){
+                  for (let j in newRecord.properties) {
 
                     let propertie = newRecord.properties[j]
-                    if(propertie.name === "tipo"){
+                    if (propertie.name === "tipo") {
 
                       tipo = propertie.value
                     }
-                    if(propertie.name === "estado"){
+                    if (propertie.name === "estado") {
                       estado = propertie.value
 
                     }
-                    if(propertie.name === "valor"){
+                    if (propertie.name === "valor") {
                       valor = propertie.value
 
                     }
 
                   }
-
-
-                  console.log(newRecord.updates.custodians[1])
 
 
                   let temp = {
@@ -236,25 +230,58 @@ export class ChequesComponent  {
                 }
 
 
+              }
+              n = n + 1
+
+            }
+
+            if (encontro) {
+
+
+              let librador = usersdict[newRecord.owner].name
+              let tipo = null
+              let estado = null
+              let valor = null
+              for (let j in newRecord.properties) {
+
+                let propertie = newRecord.properties[j]
+                if (propertie.name === "tipo") {
+
+                  tipo = propertie.value
+                }
+                if (propertie.name === "estado") {
+                  estado = propertie.value
+
+                }
+                if (propertie.name === "valor") {
+                  valor = propertie.value
+
+                }
 
               }
-              n = n+1
 
+
+              let temp = {
+                id: newRecord.recordId,
+                valor: valor,
+                name: librador,
+                tipo: tipo,
+                passed: newRecord.final,
+                button: 'Ver',
+              }
+              recordsList.push(temp)
             }
 
 
           }
 
-          console.log(recordsList)
+
           this.source.load(recordsList);
 
         })
 
 
-
       })
-
-
 
 
   }

@@ -60,6 +60,9 @@ const hasBlock = block => obj => {
 const getTable = (tableName, block) => {
   return r.table(tableName).filter(hasBlock(block))
 }
+const getBlocks = (tableName, block) => {
+  return r.table('blocks')
+}
 
 const getProposals = recordId => receivingAgent => block => {
   return getTable('proposals', block)
@@ -241,15 +244,39 @@ const _loadRecord = (block, authedKey) => (record) => {
     })
 }
 
+const _loadRecord2 = (block, authedKey) => (record) => {
+  let recordId = getRecordId(record)
+  return getTypeProperties(record)(block)
+
+}
+
+
 const fetchRecordQuery = (recordId, authedKey) => block => {
   return findRecord(recordId)(block).do(_loadRecord(block, authedKey))
 }
+
+const fetchRecordQuery2 = (recordId, authedKey) => block => {
+  return findRecord(recordId)(block).do(_loadRecord2(block, authedKey))
+}
+
+
 
 const listRecordsQuery = (authedKey, filterQuery) => block => {
   return getTable('records', block)
     .filter(filterQuery)
     .map(_loadRecord(block, authedKey))
     .coerceTo('array')
+}
+const listRecordsQuery2 = (authedKey, filterQuery) => block => {
+  return getTable('records', block)
+      .filter(filterQuery)
+      .map(_loadRecord2(block, authedKey))
+      .coerceTo('array')
+}
+
+const listBlocksQuery = () => block => {
+  return getTable('blocks', block)
+      .coerceTo('array')
 }
 
 /* Exported functions */
@@ -261,13 +288,31 @@ const fetchProperty = (recordId, propertyName) => {
 const fetchRecord = (recordId, authedKey) => {
   return db.queryWithCurrentBlock(fetchRecordQuery(recordId, authedKey))
 }
+const fetchRecord2 = (recordId, authedKey) => {
+  return db.queryWithCurrentBlock(fetchRecordQuery2(recordId, authedKey))
+}
 
 const listRecords = (authedKey, filterQuery) => {
   return db.queryWithCurrentBlock(listRecordsQuery(authedKey, filterQuery))
 }
+const listRecordsNum = (authedKey, filterQuery) => {
+  return db.queryWithCurrentBlock(listRecordsQuery2(authedKey, filterQuery))
+}
+
+const listQuery2 = filterQuery => block => {
+  return getTable('blocks', block)
+      .filter(filterQuery)
+      .coerceTo('array')
+}
+
+const listBlocks = filterQuery => db.queryWithCurrentBlock(listQuery2(filterQuery))
+
 
 module.exports = {
+  getBlocks,
   fetchProperty,
+  fetchRecord2,
+  listRecordsNum,
   fetchRecord,
   listRecords
 }
