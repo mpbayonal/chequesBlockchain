@@ -16,15 +16,15 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: le999/app1:1.0
+        image: le999/appp1:latest
         ports:
         - containerPort: 3000
         env:
           - name: VALIDATOR_URL
-            value: tcp://sawtooth-0:4004
+            value: tcp://sawtooth-org0peer0:4004
 
           - name: RETHINK_HOST
-            value: rethinkdb1-rethinkdb-proxy          
+            value: rethinkdborg0-rethinkdb-proxy           
           - name: RETHINK_PORT
             value: "28015"   
           - name: RETHINK_PASSWORD
@@ -55,20 +55,20 @@ spec:
     - name: "3000"
       port: 3000
       targetPort: 3000
----
+# ---
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: myapp-lb
-spec:
-  selector:
-    app: myapp
-  type: LoadBalancer
-  ports:
-    - name: "3000"
-      port: 3000
-      nodePort: 30001
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: myapp-lb
+# spec:
+#   selector:
+#     app: myapp
+#   type: LoadBalancer
+#   ports:
+#     - name: "3000"
+#       port: 3000
+#       nodePort: 30001
 
 ---
 apiVersion: apps/v1
@@ -89,15 +89,15 @@ spec:
     spec:
       containers:
       - name: ledger-sync
-        image: le999/ledger_sync:1.0
+        image: le999/ledger_sync:latest
         env:
           - name: VALIDATOR_URL
-            value: tcp://sawtooth-0:4004
+            value: tcp://sawtooth-org0peer0:4004
           - name: RETRY_WAIT
             value: "5000"
 
           - name: RETHINK_HOST
-            value: rethinkdb1-rethinkdb-proxy          
+            value: rethinkdborg0-rethinkdb-proxy          
           - name: RETHINK_PORT
             value: "28015"  
           - name: RETHINK_PASSWORD
